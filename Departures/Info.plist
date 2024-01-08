@@ -6,12 +6,9 @@
 	<string>Needs location for updating nearby departures</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Needs location for updating nearby departures</string>
-	<key>NSWidgetWantsLocation</key>
-	<true/>
-	<key>NSExtension</key>
-	<dict>
-		<key>NSExtensionPointIdentifier</key>
-		<string>com.apple.widgetkit-extension</string>
-	</dict>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>IntentIntent</string>
+	</array>
 </dict>
 </plist>

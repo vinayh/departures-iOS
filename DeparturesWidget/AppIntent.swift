@@ -2,7 +2,7 @@
 //  AppIntent.swift
 //  DeparturesWidget
 //
-//  Created by Vinay Hiremath on 2023-10-30.
+//  Created by Vinay Hiremath on 2024-01-05.
 //
 
 import WidgetKit
@@ -13,6 +13,6 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
     static var description = IntentDescription("This is an example widget.")
 
     // An example configurable parameter.
-    @Parameter(title: "Favorite Emoji", default: "😃")
-    var favoriteEmoji: String
+    @Parameter(title: "Station types:", default: "NaptanMetroStation,NaptanRailStation")
+    var stationTypes: String
 }
