@@ -19,12 +19,34 @@ func getSampleStnsDeps() -> [StationDepartures]? {
     return stnsDeps
 }
 
+func shortenStationName(_ station: String) -> String {
+    return station
+        .replacingOccurrences(of: "Underground Station", with: "🚇")
+        .replacingOccurrences(of: "Rail Station", with: "🚆")
+}
+
+func formatLineName(_ line: String) -> String {
+    let special = ["hammersmith-city": "H&C"]
+    return special.keys.contains(line) ? special[line]! : line.capitalized
+}
+
+func shortenDestName(_ dest: String) -> String {
+    return dest
+        .deleteSuffix(" Underground Station")
+        .deleteSuffix(" Rail Station")
+}
+
 struct Departure: Decodable {
     let id: String
     let line: String
     let mode: String
     let destination: String
     let arrival_time: String
+    
+    func arrivingInMin() -> Int {
+        let delta = ISO8601DateFormatter().date(from: arrival_time)!.timeIntervalSinceNow
+        return Int((delta / 60).rounded(.down))
+    }
 }
 
 struct Station: Decodable {
@@ -41,8 +63,8 @@ struct StationDepartures: Decodable {
 
 class LocationManager: NSObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
-    @Published var location: CLLocation? = nil
-    @Published var locationString: String = "Unknown"
+    @Published var location: CLLocation? = CLLocation(latitude: 51.5072, longitude: -0.1276)
+    @Published var locationString: String = "Loc unknown"
     
     override init() {
         super.init()
@@ -58,15 +80,16 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     
     private func updateLocationString(_ location: CLLocation?) {
         guard let location = location else {
-            locationString = "Location unavailable"
+            locationString = "Loc unavailable"
             return
         }
-        locationString = "Lat: \(location.coordinate.latitude), lon: \(location.coordinate.longitude)"
+        locationString = String(format: "Lat: %.2f, lon: %.2f", location.coordinate.latitude, location.coordinate.longitude)
+//        locationString = "Lat: \(location.coordinate.latitude), lon: \(location.coordinate.longitude)"
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         location = nil
-        locationString = "Error: \(error.localizedDescription)"
+        locationString = "Loc error: \(error.localizedDescription)"
     }
     
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -75,7 +98,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
             locationManager.startUpdatingLocation()
             break
         case .restricted, .denied:  // Location services currently unavailable.
-            locationString = "Location access denied"
+            locationString = "Loc access denied"
             break
         case .notDetermined:        // Authorization not determined yet.
             manager.requestAlwaysAuthorization()
@@ -97,24 +120,83 @@ struct DeparturesEntry: TimelineEntry {
 struct DeparturesWidgetEntryView : View {
     var entry: DeparturesEntry
     
+    func renderStnDeps(_ stnDeps: StationDepartures) -> AnyView {
+        return AnyView(VStack {
+            Text(shortenStationName(stnDeps.station.name))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .font(.system(size: 8))
+                .lineLimit(1)
+            Grid() {
+                ForEach(stnDeps.departures[...2], id: \.id) { dep in
+                    GridRow {
+                        Text("\(dep.arrivingInMin())'")
+                            .bold()
+                        Text("\(shortenDestName(dep.destination)) - \(formatLineName(dep.line))")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .underline(color: Color(dep.line))
+                    }
+                    .font(.system(size: 6))
+                    .lineLimit(1)
+                }
+//                .padding(.leading, 0)
+            }
+        })
+        
+//        return AnyView(VStack {
+//            Text(shortenStationName(stnDeps.station.name))
+//                .frame(maxWidth: .infinity, alignment: .leading)
+//                .font(.system(size: 8))
+//            HStack {
+//                VStack {
+//                    ForEach(stnDeps.departures[...2], id: \.id) { dep in
+//                        Text(String(dep.arrivingInMin()))
+//                            .font(.system(size: 6))
+//                            .padding(.leading, 10)
+//                            .bold()
+//                    }
+//                }
+//                VStack {
+//                    ForEach(stnDeps.departures[...2], id: \.id) { dep in
+//                        Text("\(dep.line.capitalized) - \(shortenDestName(dep.destination))")
+//                            .frame(maxWidth: .infinity, alignment: .leading)
+//                            .font(.system(size: 6))
+//                    }
+//                }
+//            }
+//        })
+    }
+    
     var body: some View {
+        let stopTypes: String = (entry.configuration.metroStations ? "🚇" : "")
+            + (entry.configuration.railStations ? "🚆" : "")
+            + (entry.configuration.busStations ? "🚌" : "")
+        // TODO: Improve text adaptation to widget type/size, currently works passably for small and medium widgets
         VStack {
-            //            Text("Time:")
-            //            Text(entry.date, style: .time)
-            
-            Text("Location: \(entry.locString)")
-                .font(.system(size: 6))
-            
-            Text("Station types:")
-                .font(.system(size: 6))
-            Text(entry.configuration.stationTypes)
-                .font(.system(size: 6))
+            HStack {
+                Text("Updated: \(entry.date.formatted(date: .omitted, time: .shortened))")
+                    .font(.system(size: 6))
+                
+                Text(entry.locString)
+                    .font(.system(size: 6))
+                
+                Text(stopTypes)
+                    .font(.system(size: 6))
+            }
             
             if entry.stnsDeps != nil {
-                Text(entry.stnsDeps!.map {
-                    $0.station.name
-                }.joined(separator: "\n"))
-                .font(.system(size: 8))
+                let columns = [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ]
+                
+                LazyVGrid(columns: columns) {
+                    ForEach(entry.stnsDeps!.indices, id: \.self) { index in
+                        VStack {
+                            renderStnDeps(entry.stnsDeps![index])
+                            Divider()
+                        }
+                    }
+                }
             }
             else {
                 Text("Unable to fetch stations")
@@ -129,27 +211,39 @@ struct DeparturesFetcher {
         case departureDataCorrupted
     }
     
-    private static var cachePath: URL {
-        URL.cachesDirectory.appending(path: "departures")
-    }
+//    private static var cachePath: URL {
+//        URL.cachesDirectory.appending(path: "departures")
+//    }
     
-    static var cachedDepartures: [StationDepartures]? {
-        guard let data = try? Data(contentsOf: cachePath) else {
-            return nil
+//    static var cachedDepartures: [StationDepartures]? {
+//        guard let data = try? Data(contentsOf: cachePath) else {
+//            return nil
+//        }
+//        let stnsDeps = try? JSONDecoder().decode([StationDepartures].self, from: data)
+//        return stnsDeps
+//    }
+    
+//    static var cachedDeparturesAvailable: Bool {
+//        cachedDepartures != nil
+//    }
+    
+    private static func reqUrl(loc: CLLocation, configuration: ConfigurationAppIntent) -> String {
+        var stopTypes: [String] = []
+        if configuration.metroStations {
+            stopTypes.append("NaptanMetroStation")
         }
-        let stnsDeps = try? JSONDecoder().decode([StationDepartures].self, from: data)
-        return stnsDeps
+        if configuration.railStations {
+            stopTypes.append("NaptanRailStation")
+        }
+        if configuration.busStations {
+            stopTypes.append("NaptanPublicBusCoachTram")
+        }
+        let stopTypesString = stopTypes.joined(separator: ",")
+        return "https://departures-backend.azurewebsites.net/api/nearest?lat=\(loc.coordinate.latitude)&lng=\(loc.coordinate.longitude)&stopTypes=\(stopTypesString)"
     }
     
-    static var cachedDeparturesAvailable: Bool {
-        cachedDepartures != nil
-    }
-    
-    static func fetchDepartures(loc: CLLocation, stationTypes: String) async throws -> [StationDepartures] {
-        let url = URL(string: "https://departures-backend.azurewebsites.net/api/nearest?lat=\(loc.coordinate.latitude)&lng=\(loc.coordinate.longitude)")!
-        
-        // TODO: Include station types in future requests
-        //        let url = URL(string: "https://departures-backend.azurewebsites.net/api/nearest?lat=\(loc.coordinate.latitude)&lng=\(loc.coordinate.longitude)&stnTypes=\(stationTypes)")!
+    static func fetchDepartures(loc: CLLocation, configuration: ConfigurationAppIntent) async throws -> [StationDepartures] {
+        let url = URL(string: reqUrl(loc: loc, configuration: configuration))!
         
         // Fetch JSON
         let (data, _) = try await URLSession.shared.data(from: url)
@@ -158,15 +252,15 @@ struct DeparturesFetcher {
         let stnsDeps = try JSONDecoder().decode([StationDepartures].self, from: data)
         
         // Spawn task to cache data
-        Task {
-            try? await cache(data)
-        }
+//        Task {
+//            try? await cache(data)
+//        }
         return stnsDeps
     }
     
-    private static func cache(_ departureData: Data) async throws {
-        try departureData.write(to: cachePath)
-    }
+//    private static func cache(_ departureData: Data) async throws {
+//        try departureData.write(to: cachePath)
+//    }
 }
 
 
@@ -175,7 +269,7 @@ struct DeparturesTimelineProvider: AppIntentTimelineProvider {
     typealias Intent = ConfigurationAppIntent
     var locationManager = LocationManager()
     
-    func placeholder(in context: Context) -> Entry {
+    func placeholder(in context: Context) -> DeparturesEntry {
         return DeparturesEntry(date: Date(),
                                configuration: ConfigurationAppIntent(),
                                locString: locationManager.locationString,
@@ -183,13 +277,13 @@ struct DeparturesTimelineProvider: AppIntentTimelineProvider {
     }
     
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> DeparturesEntry {
-        var snapshotDepartures: ConfigurationAppIntent
+        let snapshotDepartures: ConfigurationAppIntent
         
-        if context.isPreview && !DeparturesFetcher.cachedDeparturesAvailable {
-            snapshotDepartures = ConfigurationAppIntent() // If not cached
-        } else {
-            snapshotDepartures = ConfigurationAppIntent() // TODO: Otherwise use cached
-        }
+//        if context.isPreview && !DeparturesFetcher.cachedDeparturesAvailable {
+//            snapshotDepartures = ConfigurationAppIntent() // If not cached
+//        } else {
+        snapshotDepartures = ConfigurationAppIntent() // TODO: Otherwise use cached
+//        }
         let entry = DeparturesEntry(date: Date(),
                                     configuration: snapshotDepartures,
                                     locString: locationManager.locationString,
@@ -199,7 +293,7 @@ struct DeparturesTimelineProvider: AppIntentTimelineProvider {
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<DeparturesEntry> {
         let loc = locationManager.location
-        let stnsDeps: [StationDepartures]? = (loc != nil) ? try? await DeparturesFetcher.fetchDepartures(loc: loc!, stationTypes: configuration.stationTypes) : nil
+        let stnsDeps: [StationDepartures]? = (loc != nil) ? try? await DeparturesFetcher.fetchDepartures(loc: loc!, configuration: configuration) : nil
         let entry: DeparturesEntry = DeparturesEntry(date: Date(),
                                                      configuration: ConfigurationAppIntent(),
                                                      locString: locationManager.locationString,
@@ -227,13 +321,24 @@ struct DeparturesWidget: Widget {
 extension ConfigurationAppIntent {
     fileprivate static var smiley: ConfigurationAppIntent {
         let intent = ConfigurationAppIntent()
-        intent.stationTypes = "NaptanMetroStation,NaptanRailStation"
+        intent.metroStations = true
+        intent.railStations = true
+        intent.busStations = false
         return intent
+    }
+}
+
+extension String {
+    func deleteSuffix(_ suffix: String) -> String {
+        guard self.hasSuffix(suffix) else {
+            return self
+        }
+        return String(self.dropLast(suffix.count))
     }
 }
 
 #Preview(as: .systemSmall) {
     DeparturesWidget()
 } timeline: {
-    DeparturesEntry(date: .now, configuration: .smiley, locString: "Loc string for preview", stnsDeps: getSampleStnsDeps()!)
+    DeparturesEntry(date: .now, configuration: .smiley, locString: "PREVIEW LOC", stnsDeps: getSampleStnsDeps()!)
 }

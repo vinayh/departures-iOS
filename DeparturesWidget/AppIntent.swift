@@ -13,6 +13,15 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
     static var description = IntentDescription("This is an example widget.")
 
     // An example configurable parameter.
-    @Parameter(title: "Station types:", default: "NaptanMetroStation,NaptanRailStation")
-    var stationTypes: String
+//    @Parameter(title: "Station types:", default: "NaptanMetroStation,NaptanRailStation")
+//    var stopTypes: String
+    
+    @Parameter(title: "Underground", default: true)
+    var metroStations: Bool
+    
+    @Parameter(title: "Rail, Overground", default: true)
+    var railStations: Bool
+    
+    @Parameter(title: "Bus", default: false)
+    var busStations: Bool
 }

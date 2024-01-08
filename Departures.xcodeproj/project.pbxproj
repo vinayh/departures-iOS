@@ -22,6 +22,7 @@
 		A18E550B2B48857300FC7285 /* DeparturesWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A18E54F92B48857200FC7285 /* DeparturesWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A18E55152B48890300FC7285 /* AppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18E55042B48857200FC7285 /* AppIntent.swift */; };
 		A18E55162B48890400FC7285 /* AppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18E55042B48857200FC7285 /* AppIntent.swift */; };
+		A1C957412B4C4B8100D73E34 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A18E54CF2B48840100FC7285 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -349,6 +350,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1C957412B4C4B8100D73E34 /* Assets.xcassets in Resources */,
 				A18E55072B48857300FC7285 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
