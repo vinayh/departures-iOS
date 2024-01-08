@@ -16,7 +16,7 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
 //    @Parameter(title: "Station types:", default: "NaptanMetroStation,NaptanRailStation")
 //    var stopTypes: String
     
-    @Parameter(title: "Underground", default: true)
+    @Parameter(title: "Underground, DLR", default: true)
     var metroStations: Bool
     
     @Parameter(title: "Rail, Overground", default: true)

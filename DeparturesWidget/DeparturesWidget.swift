@@ -23,6 +23,7 @@ func shortenStationName(_ station: String) -> String {
     return station
         .replacingOccurrences(of: "Underground Station", with: "🚇")
         .replacingOccurrences(of: "Rail Station", with: "🚆")
+        .replacingOccurrences(of: "DLR Station", with: "🚈")
 }
 
 func formatLineName(_ line: String) -> String {
@@ -127,7 +128,8 @@ struct DeparturesWidgetEntryView : View {
                 .font(.system(size: 8))
                 .lineLimit(1)
             Grid() {
-                ForEach(stnDeps.departures[...2], id: \.id) { dep in
+                ForEach(stnDeps.departures[...2].indices, id: \.self) { index in
+                    let dep = stnDeps.departures[index]
                     GridRow {
                         Text("\(dep.arrivingInMin())'")
                             .bold()
