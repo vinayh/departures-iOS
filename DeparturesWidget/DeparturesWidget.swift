@@ -21,9 +21,12 @@ func getSampleStnsDeps() -> [StationDepartures]? {
 
 func shortenStationName(_ station: String) -> String {
     return station
-        .replacingOccurrences(of: "Underground Station", with: "🚇")
-        .replacingOccurrences(of: "Rail Station", with: "🚆")
-        .replacingOccurrences(of: "DLR Station", with: "🚈")
+//        .replacingOccurrences(of: "Underground Station", with: "🚇")
+//        .replacingOccurrences(of: "Rail Station", with: "🚆")
+//        .replacingOccurrences(of: "DLR Station", with: "🚈")
+        .replacingOccurrences(of: "Underground Station", with: "")
+        .replacingOccurrences(of: "Rail Station", with: "")
+        .replacingOccurrences(of: "DLR Station", with: "")
 }
 
 func formatLineName(_ line: String) -> String {
@@ -43,7 +46,7 @@ func shortenDestName(_ dest: String) -> String {
         .replacingOccurrences(of: "DLR Station", with: "DLR")
 }
 
-struct Departure: Decodable {
+struct Departure: Codable {
     let id: String
     let line: String
     let mode: String
@@ -56,14 +59,14 @@ struct Departure: Decodable {
     }
 }
 
-struct Station: Decodable {
+struct Station: Codable {
     let id: String
     let lat: Float
     let lon: Float
     let name: String
 }
 
-struct StationDepartures: Decodable {
+struct StationDepartures: Codable {
     let station: Station
     let departures: [Departure]
 }
@@ -90,7 +93,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
             locationString = "Loc unavailable"
             return
         }
-        locationString = String(format: "Lat: %.2f, lon: %.2f", location.coordinate.latitude, location.coordinate.longitude)
+        locationString = String(format: "[%.2f, %.2f]", location.coordinate.latitude, location.coordinate.longitude)
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -126,25 +129,50 @@ struct DeparturesEntry: TimelineEntry {
 struct DeparturesWidgetEntryView : View {
     var entry: DeparturesEntry
     
-    private static func renderStnDeps(_ stnDeps: StationDepartures) -> AnyView {
-        return AnyView(VStack {
+    @Environment(\.widgetFamily)
+    var family
+    
+    let familyToNumStations = [WidgetFamily.accessoryRectangular: 4,
+                               WidgetFamily.systemMedium: 6,
+                               WidgetFamily.systemLarge: 8]
+    
+    let familyToNumDeps = [WidgetFamily.accessoryRectangular: 2,
+                           WidgetFamily.systemMedium: 3,
+                           WidgetFamily.systemLarge: 4]
+    
+    let textSizeStn = [WidgetFamily.accessoryRectangular: 8,
+                       WidgetFamily.systemMedium: 10,
+                       WidgetFamily.systemLarge: 12]
+    
+    let textSizeDep = [WidgetFamily.accessoryRectangular: 7,
+                       WidgetFamily.systemMedium: 8,
+                       WidgetFamily.systemLarge: 9]
+    
+    private func renderStnDeps(_ stnDeps: StationDepartures) -> AnyView {
+        let numDeps: Int = familyToNumDeps[family] ?? 3
+        
+        return AnyView(Grid(horizontalSpacing: 3) {
             Text(shortenStationName(stnDeps.station.name))
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .font(.system(size: 8))
+                .font(.system(size: (CGFloat)(textSizeStn[family] ?? 8)))
                 .lineLimit(1)
-            Grid() {
-                ForEach(stnDeps.departures[...2].indices, id: \.self) { index in
-                    let dep = stnDeps.departures[index]
-                    GridRow {
-                        Text("\(dep.arrivingInMin())'")
-                            .bold()
+            
+            ForEach(stnDeps.departures.indices.prefix(numDeps), id: \.self) { index in
+                let dep = stnDeps.departures[index]
+                GridRow {
+                    Text("\(dep.arrivingInMin())'")
+                        .bold()
+                    if family == .accessoryRectangular {
+                        Text("\(shortenDestName(dep.destination)) - \(formatLineName(dep.line))")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
                         Text("\(shortenDestName(dep.destination)) - \(formatLineName(dep.line))")
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .underline(color: Color(dep.line))
                     }
-                    .font(.system(size: 6))
-                    .lineLimit(1)
                 }
+                .font(.system(size: (CGFloat)(textSizeDep[family] ?? 6)))
+                .lineLimit(1)
             }
         })
     }
@@ -153,8 +181,11 @@ struct DeparturesWidgetEntryView : View {
         let stopTypes: String = (entry.configuration.metroStations ? "🚇" : "")
             + (entry.configuration.railStations ? "🚆" : "")
             + (entry.configuration.busStations ? "🚌" : "")
+        
+        let numStations: Int = familyToNumStations[family] ?? 6
+        
         // TODO: Improve text adaptation to widget type/size, currently works passably for small and medium widgets
-        VStack {
+        VStack(spacing: 0) {
             HStack {
                 Text("Updated: \(entry.date.formatted(date: .omitted, time: .shortened))")
                     .font(.system(size: 6))
@@ -172,10 +203,10 @@ struct DeparturesWidgetEntryView : View {
                     GridItem(.flexible())
                 ]
                 
-                LazyVGrid(columns: columns) {
-                    ForEach(entry.stnsDeps!.indices, id: \.self) { index in
+                LazyVGrid(columns: columns, spacing: 0) {
+                    ForEach(entry.stnsDeps!.indices.prefix(numStations), id: \.self) { index in
                         VStack {
-                            DeparturesWidgetEntryView.renderStnDeps(entry.stnsDeps![index])
+                            renderStnDeps(entry.stnsDeps![index])
                             Divider()
                         }
                     }
@@ -273,6 +304,9 @@ struct DeparturesWidget: Widget {
             DeparturesWidgetEntryView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
+        .configurationDisplayName("Departures")
+        .description("View upcoming TfL departures near your location.")
+        .supportedFamilies([.accessoryRectangular, .systemMedium])
     }
 }
 
@@ -296,8 +330,11 @@ extension String {
     }
 }
 
-#Preview(as: .systemSmall) {
+#Preview(as: .systemMedium) {
     DeparturesWidget()
 } timeline: {
+//    let loc = CLLocation(latitude: 51.5072, longitude: -0.1276)
+//    let stnsDeps: [StationDepartures]? = (loc != nil) ? try? await DeparturesFetcher.fetchDepartures(loc: loc, configuration: .smiley) : nil
+//    DeparturesEntry(date: .now, configuration: .smiley, locString: "PREVIEW - 51.51, -0.13", stnsDeps: stnsDeps)
     DeparturesEntry(date: .now, configuration: .smiley, locString: "PREVIEW LOC", stnsDeps: getSampleStnsDeps()!)
 }
