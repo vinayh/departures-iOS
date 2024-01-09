@@ -12,10 +12,6 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Configuration"
     static var description = IntentDescription("This is an example widget.")
 
-    // An example configurable parameter.
-//    @Parameter(title: "Station types:", default: "NaptanMetroStation,NaptanRailStation")
-//    var stopTypes: String
-    
     @Parameter(title: "Underground, DLR", default: true)
     var metroStations: Bool
     

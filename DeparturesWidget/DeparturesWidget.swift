@@ -27,14 +27,20 @@ func shortenStationName(_ station: String) -> String {
 }
 
 func formatLineName(_ line: String) -> String {
-    let special = ["hammersmith-city": "H&C"]
-    return special.keys.contains(line) ? special[line]! : line.capitalized
+    let special = ["hammersmith-city": "H&C",
+                   "dlr": "DLR"]
+    if special.keys.contains(line) {
+        return special[line]!
+    } else {
+        return line.capitalized
+    }
 }
 
 func shortenDestName(_ dest: String) -> String {
     return dest
         .deleteSuffix(" Underground Station")
         .deleteSuffix(" Rail Station")
+        .replacingOccurrences(of: "DLR Station", with: "DLR")
 }
 
 struct Departure: Decodable {
@@ -85,7 +91,6 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
             return
         }
         locationString = String(format: "Lat: %.2f, lon: %.2f", location.coordinate.latitude, location.coordinate.longitude)
-//        locationString = "Lat: \(location.coordinate.latitude), lon: \(location.coordinate.longitude)"
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -121,7 +126,7 @@ struct DeparturesEntry: TimelineEntry {
 struct DeparturesWidgetEntryView : View {
     var entry: DeparturesEntry
     
-    func renderStnDeps(_ stnDeps: StationDepartures) -> AnyView {
+    private static func renderStnDeps(_ stnDeps: StationDepartures) -> AnyView {
         return AnyView(VStack {
             Text(shortenStationName(stnDeps.station.name))
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -140,32 +145,8 @@ struct DeparturesWidgetEntryView : View {
                     .font(.system(size: 6))
                     .lineLimit(1)
                 }
-//                .padding(.leading, 0)
             }
         })
-        
-//        return AnyView(VStack {
-//            Text(shortenStationName(stnDeps.station.name))
-//                .frame(maxWidth: .infinity, alignment: .leading)
-//                .font(.system(size: 8))
-//            HStack {
-//                VStack {
-//                    ForEach(stnDeps.departures[...2], id: \.id) { dep in
-//                        Text(String(dep.arrivingInMin()))
-//                            .font(.system(size: 6))
-//                            .padding(.leading, 10)
-//                            .bold()
-//                    }
-//                }
-//                VStack {
-//                    ForEach(stnDeps.departures[...2], id: \.id) { dep in
-//                        Text("\(dep.line.capitalized) - \(shortenDestName(dep.destination))")
-//                            .frame(maxWidth: .infinity, alignment: .leading)
-//                            .font(.system(size: 6))
-//                    }
-//                }
-//            }
-//        })
     }
     
     var body: some View {
@@ -194,7 +175,7 @@ struct DeparturesWidgetEntryView : View {
                 LazyVGrid(columns: columns) {
                     ForEach(entry.stnsDeps!.indices, id: \.self) { index in
                         VStack {
-                            renderStnDeps(entry.stnsDeps![index])
+                            DeparturesWidgetEntryView.renderStnDeps(entry.stnsDeps![index])
                             Divider()
                         }
                     }
@@ -202,7 +183,7 @@ struct DeparturesWidgetEntryView : View {
             }
             else {
                 Text("Unable to fetch stations")
-                    .font(.system(size: 8))
+                    .font(.system(size: 10))
             }
         }
     }
@@ -212,22 +193,6 @@ struct DeparturesFetcher {
     enum DepartureFetcherError: Error {
         case departureDataCorrupted
     }
-    
-//    private static var cachePath: URL {
-//        URL.cachesDirectory.appending(path: "departures")
-//    }
-    
-//    static var cachedDepartures: [StationDepartures]? {
-//        guard let data = try? Data(contentsOf: cachePath) else {
-//            return nil
-//        }
-//        let stnsDeps = try? JSONDecoder().decode([StationDepartures].self, from: data)
-//        return stnsDeps
-//    }
-    
-//    static var cachedDeparturesAvailable: Bool {
-//        cachedDepartures != nil
-//    }
     
     private static func reqUrl(loc: CLLocation, configuration: ConfigurationAppIntent) -> String {
         var stopTypes: [String] = []
@@ -252,17 +217,9 @@ struct DeparturesFetcher {
         
         // Parse JSON
         let stnsDeps = try JSONDecoder().decode([StationDepartures].self, from: data)
-        
-        // Spawn task to cache data
-//        Task {
-//            try? await cache(data)
-//        }
+
         return stnsDeps
     }
-    
-//    private static func cache(_ departureData: Data) async throws {
-//        try departureData.write(to: cachePath)
-//    }
 }
 
 
