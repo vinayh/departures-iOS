@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A11791552B505804008414B7 /* DeparturesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11791542B505804008414B7 /* DeparturesView.swift */; };
+		A11791572B50580D008414B7 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11791562B50580D008414B7 /* SettingsView.swift */; };
+		A11791592B505964008414B7 /* sampleDepartures.json in Resources */ = {isa = PBXBuildFile; fileRef = A11791582B505964008414B7 /* sampleDepartures.json */; };
+		A117915A2B505964008414B7 /* sampleDepartures.json in Resources */ = {isa = PBXBuildFile; fileRef = A11791582B505964008414B7 /* sampleDepartures.json */; };
+		A117915C2B505D5C008414B7 /* CurrentDepartures.swift in Sources */ = {isa = PBXBuildFile; fileRef = A117915B2B505D5C008414B7 /* CurrentDepartures.swift */; };
+		A117915F2B5064FA008414B7 /* DepartureRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A117915E2B5064FA008414B7 /* DepartureRow.swift */; };
 		A18E54CC2B48840000FC7285 /* DeparturesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18E54CB2B48840000FC7285 /* DeparturesApp.swift */; };
 		A18E54CE2B48840000FC7285 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18E54CD2B48840000FC7285 /* ContentView.swift */; };
 		A18E54D02B48840100FC7285 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A18E54CF2B48840100FC7285 /* Assets.xcassets */; };
@@ -23,6 +29,7 @@
 		A18E55152B48890300FC7285 /* AppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18E55042B48857200FC7285 /* AppIntent.swift */; };
 		A18E55162B48890400FC7285 /* AppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18E55042B48857200FC7285 /* AppIntent.swift */; };
 		A1C957412B4C4B8100D73E34 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A18E54CF2B48840100FC7285 /* Assets.xcassets */; };
+		A1D52B9A2B506E4300C4A48A /* LocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D52B992B506E4300C4A48A /* LocationManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +71,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A11791542B505804008414B7 /* DeparturesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturesView.swift; sourceTree = "<group>"; };
+		A11791562B50580D008414B7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A11791582B505964008414B7 /* sampleDepartures.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sampleDepartures.json; sourceTree = "<group>"; };
+		A117915B2B505D5C008414B7 /* CurrentDepartures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentDepartures.swift; sourceTree = "<group>"; };
+		A117915E2B5064FA008414B7 /* DepartureRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepartureRow.swift; sourceTree = "<group>"; };
 		A18E54C82B48840000FC7285 /* Departures.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Departures.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A18E54CB2B48840000FC7285 /* DeparturesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturesApp.swift; sourceTree = "<group>"; };
 		A18E54CD2B48840000FC7285 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -83,6 +95,7 @@
 		A18E55062B48857300FC7285 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A18E55082B48857300FC7285 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A18E55142B48880600FC7285 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		A1D52B992B506E4300C4A48A /* LocationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -148,6 +161,12 @@
 				A18E55142B48880600FC7285 /* Info.plist */,
 				A18E54CB2B48840000FC7285 /* DeparturesApp.swift */,
 				A18E54CD2B48840000FC7285 /* ContentView.swift */,
+				A11791582B505964008414B7 /* sampleDepartures.json */,
+				A11791542B505804008414B7 /* DeparturesView.swift */,
+				A1D52B992B506E4300C4A48A /* LocationManager.swift */,
+				A117915E2B5064FA008414B7 /* DepartureRow.swift */,
+				A117915B2B505D5C008414B7 /* CurrentDepartures.swift */,
+				A11791562B50580D008414B7 /* SettingsView.swift */,
 				A18E54CF2B48840100FC7285 /* Assets.xcassets */,
 				A18E54D12B48840100FC7285 /* Preview Content */,
 			);
@@ -327,6 +346,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A11791592B505964008414B7 /* sampleDepartures.json in Resources */,
 				A18E54D32B48840100FC7285 /* Preview Assets.xcassets in Resources */,
 				A18E54D02B48840100FC7285 /* Assets.xcassets in Resources */,
 			);
@@ -350,6 +370,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A117915A2B505964008414B7 /* sampleDepartures.json in Resources */,
 				A1C957412B4C4B8100D73E34 /* Assets.xcassets in Resources */,
 				A18E55072B48857300FC7285 /* Assets.xcassets in Resources */,
 			);
@@ -362,9 +383,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A11791572B50580D008414B7 /* SettingsView.swift in Sources */,
 				A18E54CE2B48840000FC7285 /* ContentView.swift in Sources */,
+				A1D52B9A2B506E4300C4A48A /* LocationManager.swift in Sources */,
+				A11791552B505804008414B7 /* DeparturesView.swift in Sources */,
 				A18E54CC2B48840000FC7285 /* DeparturesApp.swift in Sources */,
+				A117915F2B5064FA008414B7 /* DepartureRow.swift in Sources */,
 				A18E55152B48890300FC7285 /* AppIntent.swift in Sources */,
+				A117915C2B505D5C008414B7 /* CurrentDepartures.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

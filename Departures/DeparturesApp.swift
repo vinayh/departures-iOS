@@ -9,9 +9,14 @@ import SwiftUI
 
 @main
 struct DeparturesApp: App {
+    @StateObject var currentDepartures = CurrentDepartures()
+    @StateObject var locationManager = LocationManager()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(currentDepartures)
+                .environmentObject(locationManager)
         }
     }
 }
