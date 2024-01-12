@@ -8,37 +8,38 @@
 import SwiftUI
 
 struct DeparturesView: View {
-    @EnvironmentObject var currentDepartures: CurrentDepartures
-    @EnvironmentObject var locationManager: LocationManager
+    @EnvironmentObject var updateManager: UpdateManager
     
     var body: some View {
         NavigationStack {
-            if currentDepartures.stnsDeps != nil {
-                List {
-                    ForEach(currentDepartures.stnsDeps!) { stnDeps in
-                        Section(Station.shortenStationName(stnDeps.station.name)) {
-                            ForEach(stnDeps.departures) { dep in
-                                DepartureRow(departure: dep)
-                            }
-                        }
-                        .headerProminence(.increased)
-                    }
+            HStack {
+                Text("Current location: \(updateManager.locationString)")
+                    .frame(maxWidth: /*@START_MENU_TOKEN@*/.infinity/*@END_MENU_TOKEN@*/, alignment: .leading)
+                    .padding([.leading], 15)
+                    .lineLimit(1)
+                
+                if updateManager.depsLastUpdated != nil {
+                    Text("Updated: \(updateManager.depsLastUpdated!.formatted(date: .omitted, time: .shortened))")
                 }
-                .refreshable {
-                    if locationManager.location != nil {
-                        try? await currentDepartures.update(loc: locationManager.location!)
-                    }
-//                    TODO: Handle refresh case when location is not available?
-                }
-            } else {
-                Text("Departures unavailable")
+                
             }
+            .font(.system(size: 12))
+            Text(String(updateManager.stnsDeps.count))
+            List {
+                ForEach(updateManager.stnsDeps) { stnDeps in
+                    StationRow(stnDeps: stnDeps)
+                }
+            }
+            .refreshable {
+                updateManager.updateDepartures(force: true)
+//            TODO: Handle refresh case when location is not available?
+            }
+            .navigationTitle("Departures")
         }
     }
 }
 
 #Preview {
     DeparturesView()
-        .environmentObject(CurrentDepartures())
-        .environmentObject(LocationManager())
+        .environmentObject(UpdateManager.example())
 }
