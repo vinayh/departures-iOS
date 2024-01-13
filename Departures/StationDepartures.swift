@@ -38,12 +38,10 @@ struct Departure: Codable, Identifiable {
         }
     }
     
-    #if DEBUG
     static func example() -> Departure {
         let arrivalTimeString: String = Date.init(timeIntervalSinceNow: 500).ISO8601Format()
         return Departure(id: "test id", line: "New Tube", mode: "tube", destination: "Manchester", arrival_time: arrivalTimeString)
     }
-    #endif
 }
 
 struct Station: Codable, Identifiable {

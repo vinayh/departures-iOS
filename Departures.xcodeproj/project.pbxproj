@@ -13,6 +13,8 @@
 		A117915A2B505964008414B7 /* sampleDepartures.json in Resources */ = {isa = PBXBuildFile; fileRef = A11791582B505964008414B7 /* sampleDepartures.json */; };
 		A117915C2B505D5C008414B7 /* StationDepartures.swift in Sources */ = {isa = PBXBuildFile; fileRef = A117915B2B505D5C008414B7 /* StationDepartures.swift */; };
 		A117915F2B5064FA008414B7 /* DepartureRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A117915E2B5064FA008414B7 /* DepartureRow.swift */; };
+		A17721BA2B52F82E00DC3EB8 /* DeparturesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17721B92B52F82E00DC3EB8 /* DeparturesListView.swift */; };
+		A17721BC2B52F92400DC3EB8 /* DeparturesMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17721BB2B52F92400DC3EB8 /* DeparturesMapView.swift */; };
 		A18E54CC2B48840000FC7285 /* DeparturesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18E54CB2B48840000FC7285 /* DeparturesApp.swift */; };
 		A18E54CE2B48840000FC7285 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18E54CD2B48840000FC7285 /* ContentView.swift */; };
 		A18E54D02B48840100FC7285 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A18E54CF2B48840100FC7285 /* Assets.xcassets */; };
@@ -77,6 +79,8 @@
 		A11791582B505964008414B7 /* sampleDepartures.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sampleDepartures.json; sourceTree = "<group>"; };
 		A117915B2B505D5C008414B7 /* StationDepartures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationDepartures.swift; sourceTree = "<group>"; };
 		A117915E2B5064FA008414B7 /* DepartureRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DepartureRow.swift; sourceTree = "<group>"; };
+		A17721B92B52F82E00DC3EB8 /* DeparturesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturesListView.swift; sourceTree = "<group>"; };
+		A17721BB2B52F92400DC3EB8 /* DeparturesMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturesMapView.swift; sourceTree = "<group>"; };
 		A18E54C82B48840000FC7285 /* Departures.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Departures.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A18E54CB2B48840000FC7285 /* DeparturesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturesApp.swift; sourceTree = "<group>"; };
 		A18E54CD2B48840000FC7285 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -137,6 +141,8 @@
 		A18E54BF2B48840000FC7285 = {
 			isa = PBXGroup;
 			children = (
+				A17721BB2B52F92400DC3EB8 /* DeparturesMapView.swift */,
+				A17721B92B52F82E00DC3EB8 /* DeparturesListView.swift */,
 				A192C1882B51819D00793A62 /* StationRow.swift */,
 				A18E54CA2B48840000FC7285 /* Departures */,
 				A18E54DB2B48840100FC7285 /* DeparturesTests */,
@@ -387,6 +393,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				A11791572B50580D008414B7 /* SettingsView.swift in Sources */,
+				A17721BA2B52F82E00DC3EB8 /* DeparturesListView.swift in Sources */,
+				A17721BC2B52F92400DC3EB8 /* DeparturesMapView.swift in Sources */,
 				A18E54CE2B48840000FC7285 /* ContentView.swift in Sources */,
 				A1D52B9A2B506E4300C4A48A /* UpdateManager.swift in Sources */,
 				A11791552B505804008414B7 /* DeparturesView.swift in Sources */,

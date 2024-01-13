@@ -14,7 +14,7 @@ struct DeparturesApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .environmentObject(UpdateManager())
+                .environmentObject(updateManager)
         }
     }
 }

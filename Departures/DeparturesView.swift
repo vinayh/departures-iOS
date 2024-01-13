@@ -8,38 +8,21 @@
 import SwiftUI
 
 struct DeparturesView: View {
-    @EnvironmentObject var updateManager: UpdateManager
     
     var body: some View {
-        NavigationStack {
-            HStack {
-                Text("Current location: \(updateManager.locationString)")
-                    .frame(maxWidth: /*@START_MENU_TOKEN@*/.infinity/*@END_MENU_TOKEN@*/, alignment: .leading)
-                    .padding([.leading], 15)
-                    .lineLimit(1)
-                
-                if updateManager.depsLastUpdated != nil {
-                    Text("Updated: \(updateManager.depsLastUpdated!.formatted(date: .omitted, time: .shortened))")
-                }
-                
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                DeparturesListView()
+                    .environmentObject(UpdateManager())
+                    .frame(height: geo.size.height/2)
+                DeparturesMapView()
+                    .frame(height: geo.size.height/2)
             }
-            .font(.system(size: 12))
-            Text(String(updateManager.stnsDeps.count))
-            List {
-                ForEach(updateManager.stnsDeps) { stnDeps in
-                    StationRow(stnDeps: stnDeps)
-                }
-            }
-            .refreshable {
-                await updateManager.updateDepartures(force: true)
-//            TODO: Handle refresh case when location is not available?
-            }
-            .navigationTitle("Departures")
+            
         }
     }
 }
 
 #Preview {
     DeparturesView()
-        .environmentObject(UpdateManager.example())
 }
