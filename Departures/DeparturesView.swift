@@ -31,7 +31,7 @@ struct DeparturesView: View {
                 }
             }
             .refreshable {
-                updateManager.updateDepartures(force: true)
+                await updateManager.updateDepartures(force: true)
 //            TODO: Handle refresh case when location is not available?
             }
             .navigationTitle("Departures")

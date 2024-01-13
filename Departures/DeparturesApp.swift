@@ -18,3 +18,4 @@ struct DeparturesApp: App {
         }
     }
 }
+

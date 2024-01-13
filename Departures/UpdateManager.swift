@@ -11,7 +11,8 @@ import CoreLocation
 class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     private var lastUpdateStarted: Date? = nil
-    private let updateDeparturesLock = NSLock()
+    private var updateInProgress = false
+    let queue = OperationQueue()
     
     @Published var location: CLLocation? = nil
     @Published var locationString: String = "Loc unknown"
@@ -20,8 +21,11 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     override init() {
         super.init()
+        queue.maxConcurrentOperationCount = 1
         locationManager.delegate = self
         locationManager.requestAlwaysAuthorization()
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.distanceFilter = 200
         locationManager.startUpdatingLocation()
     }
     
@@ -43,7 +47,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         return "https://departures-backend.azurewebsites.net/api/nearest?lat=\(loc.coordinate.latitude)&lng=\(loc.coordinate.longitude)&stopTypes=\(stopTypesString)"
     }
     
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    @MainActor func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if locations.count > 0 {
             location = locations.first
         } else {
@@ -56,6 +60,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         location = newLoc
         locationString = String(format: "[%.2f, %.2f]", location!.coordinate.latitude, location!.coordinate.longitude)
         updateDepartures()
+
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -87,31 +92,37 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             try await MainActor.run {
                 stnsDeps = try JSONDecoder().decode([StationDepartures].self, from: data) // Parse JSON
                 depsLastUpdated = Date()
-                print("Finished updating departures for location \(loc.coordinate.latitude), \(loc.coordinate.longitude), count: \(stnsDeps.count)")
             }
+            print("Finished updating departures for location \(loc.coordinate.latitude), \(loc.coordinate.longitude), count: \(stnsDeps.count)")
         } catch {
             print("Error fetching departures, URL: \(url)")
         }
     }
     
+    @MainActor
     func updateDepartures(force: Bool = false) {
-//        print("Requested updated departures, force=\(force), lastUpdateStarted=\(lastUpdateStarted != nil ? lastUpdateStarted!.timeIntervalSinceNow : nil)")
-        
-        updateDeparturesLock.withLock {
-            if !force && lastUpdateStarted != nil && lastUpdateStarted!.timeIntervalSinceNow > -120 {
-                print("Data is <2min old and force update is not specified, skipping...")
-                return
+        queue.waitUntilAllOperationsAreFinished()
+        queue.addOperation {
+            if !self.updateInProgress {
+                self.updateInProgress = true
+                if (self.lastUpdateStarted != nil && self.lastUpdateStarted!.timeIntervalSinceNow > -120) {
+                    print("Data is <2min old and force update is not specified, skipping...")
+                    return
+                }
+                self.lastUpdateStarted = Date()
+                print("Starting departure update, lastUpdateStarted=\(self.lastUpdateStarted != nil ? self.lastUpdateStarted!.timeIntervalSinceNow : 0)")
+        //        print("Starting departure update, force=\(force), lastUpdateStarted=\(lastUpdateStarted != nil ? lastUpdateStarted!.timeIntervalSinceNow : nil)")
+                
+                guard let loc = self.location else {
+                    print("Location not available")
+                    return
+                }
+                print("Updating departures with location \(self.locationString)...")
+                Task {
+                    await self.updateHelper(loc: loc)
+                }
             }
-            lastUpdateStarted = Date()
-        }
-        
-        guard let loc = location else {
-            print("Location not available")
-            return
-        }
-        print("Updating departures with location \(locationString)...")
-        Task {
-            await updateHelper(loc: loc)
+            self.updateInProgress = false
         }
     }
     
