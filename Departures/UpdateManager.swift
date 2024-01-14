@@ -11,9 +11,10 @@ import CoreLocation
 class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     private var lastUpdateStarted: Date? = nil
+    private let geocoder = CLGeocoder()
     
     @Published var location: CLLocation? = nil
-    @Published var locationString: String = "Loc unknown"
+    @Published var locationString: String = "Unknown"
     @Published var stnsDeps: [StationDepartures] = [StationDepartures]()
     @Published var depsLastUpdated: Date? = nil
     
@@ -48,10 +49,10 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         location = locations.last
         guard let location = location else {
-            locationString = "Loc unavailable"
+            locationString = "Unavailable"
             return
         }
-        locationString = String(format: "[%.2f, %.2f]", location.coordinate.latitude, location.coordinate.longitude)
+        reverseGeocode(loc: location)
         Task {
             print("Location requested updating departures")
             await updateDepartures()
@@ -60,7 +61,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         location = nil
-        locationString = "Loc error: \(error.localizedDescription)"
+        locationString = "Error"
     }
     
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -69,7 +70,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             locationManager.startUpdatingLocation()
             break
         case .restricted, .denied:  // Location services currently unavailable.
-            locationString = "Loc access denied"
+            locationString = "Access denied"
             break
         case .notDetermined:        // Authorization not determined yet.
             manager.requestAlwaysAuthorization()
@@ -79,7 +80,17 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    func updateHelper(loc: CLLocation) async {
+    func reverseGeocode(loc: CLLocation) {
+        locationString = String(format: "[%.2f, %.2f]", loc.coordinate.latitude, loc.coordinate.longitude)
+        geocoder.reverseGeocodeLocation(loc, completionHandler: {(placemarks, error) -> Void in
+            if error == nil && placemarks != nil {
+                self.locationString = placemarks!.first?.postalCode ?? self.locationString
+            }
+        })
+    }
+    
+    
+    private func updateDeparturesHelper(loc: CLLocation) async {
         let url = URL(string: UpdateManager.reqUrl(loc: loc))!
         do {
             let (data, _) = try await URLSession.shared.data(from: url) // Fetch JSON
@@ -105,10 +116,10 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         lastUpdateStarted = Date()
         print("\tUpdating departures with location \(locationString)...")
-        await updateHelper(loc: loc)
+        await updateDeparturesHelper(loc: loc)
     }
     
-    func startUpdatingDepartures(secInterval: Double = 180.0) {
+    private func startUpdatingDepartures(secInterval: Double = 180.0) {
         Task {
             print("Dispatch queue requested updating departures")
             await updateDepartures()

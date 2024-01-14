@@ -7,22 +7,32 @@
 
 import SwiftUI
 
+extension PresentationDetent {
+    static let bar = Self.fraction(0.10)
+    static let small = Self.fraction(0.25)
+    
+}
 struct DeparturesView: View {
+    @State private var showingList = true
+    @State private var settingsDetent = PresentationDetent.small
     
     var body: some View {
-        GeometryReader { geo in
-            VStack(spacing: 0) {
+        DeparturesMapView()
+            .environmentObject(UpdateManager())
+            .sheet(isPresented: $showingList) {
                 DeparturesListView()
-                    .environmentObject(UpdateManager())
-                    .frame(height: geo.size.height/2)
-                DeparturesMapView()
-                    .frame(height: geo.size.height/2)
+                    .presentationDetents(
+                        [.bar, .small, .medium, .large],
+                        selection: $settingsDetent
+                    )
+                    .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+                    .interactiveDismissDisabled()
             }
-            
-        }
+            .buttonStyle(.bordered)
     }
 }
 
 #Preview {
     DeparturesView()
+        .environmentObject(UpdateManager.example())
 }

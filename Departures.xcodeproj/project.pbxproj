@@ -141,9 +141,6 @@
 		A18E54BF2B48840000FC7285 = {
 			isa = PBXGroup;
 			children = (
-				A17721BB2B52F92400DC3EB8 /* DeparturesMapView.swift */,
-				A17721B92B52F82E00DC3EB8 /* DeparturesListView.swift */,
-				A192C1882B51819D00793A62 /* StationRow.swift */,
 				A18E54CA2B48840000FC7285 /* Departures */,
 				A18E54DB2B48840100FC7285 /* DeparturesTests */,
 				A18E54E52B48840100FC7285 /* DeparturesUITests */,
@@ -171,6 +168,9 @@
 				A18E54CB2B48840000FC7285 /* DeparturesApp.swift */,
 				A18E54CD2B48840000FC7285 /* ContentView.swift */,
 				A11791582B505964008414B7 /* sampleDepartures.json */,
+				A17721BB2B52F92400DC3EB8 /* DeparturesMapView.swift */,
+				A17721B92B52F82E00DC3EB8 /* DeparturesListView.swift */,
+				A192C1882B51819D00793A62 /* StationRow.swift */,
 				A11791542B505804008414B7 /* DeparturesView.swift */,
 				A1D52B992B506E4300C4A48A /* UpdateManager.swift */,
 				A117915E2B5064FA008414B7 /* DepartureRow.swift */,
