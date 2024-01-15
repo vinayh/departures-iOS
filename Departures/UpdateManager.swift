@@ -5,6 +5,7 @@
 //  Created by Vinay Hiremath on 2024-01-11.
 //
 
+import os
 import SwiftUI
 import CoreLocation
 
@@ -12,6 +13,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     private let geocoder = CLGeocoder()
     private var lastDepUpdateStarted: Date? = nil
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "UpdateManager")
     
     @Published var location: CLLocation? = nil
     @Published var locationString: String = "Unknown"
@@ -37,7 +39,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         reverseGeocode(loc: location)
         Task {
-            print("locationManager - updating departures")
+            logger.log("locationManager - updating departures")
             await updateDepartures()
         }
     }
@@ -98,30 +100,30 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             let (data, _) = try await URLSession.shared.data(from: url) // Fetch JSON
             stnsDeps = try JSONDecoder().decode([StationDepartures].self, from: data) // Parse JSON
             lastDepUpdateFinished = Date()
-            print("\tFinished updating departures for location \(locationString), station count: \(stnsDeps.count)")
+            logger.log("Finished updating departures for location \(self.locationString), station count: \(self.stnsDeps.count)")
         } catch {
-            print("\tError fetching departures, req URL: \(url.absoluteString)")
+            logger.error("Error fetching departures, req URL: \(url.absoluteString)")
         }
         self.numCurrentlyUpdating -= 1
     }
     
     func updateDepartures(force: Bool = false) async {
         if !force && lastDepUpdateStarted != nil && lastDepUpdateStarted!.timeIntervalSinceNow > -120.0 {
-            print("\tData is <2min old and force update is not specified, skipping...")
+            logger.log("Data is <2min old and force update is not specified, skipping...")
             return
         }
         guard let loc = location else {
-            print("\tLocation not available")
+            logger.error("Location not available")
             return
         }
         lastDepUpdateStarted = Date()
-        print("\tUpdating departures with location \(locationString)...")
+        logger.log("Updating departures with location \(self.locationString)...")
         await updateDeparturesHelper(loc: loc)
     }
     
     private func startUpdatingDepartures(secInterval: Double = 180.0) {
         Task {
-            print("DispatchQueue - updating departures")
+            logger.log("DispatchQueue - updating departures")
             await updateDepartures()
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + secInterval) { [weak self] in
@@ -135,7 +137,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             do {
                 let jsonData = try Data(contentsOf: url)
                 updateManager.stnsDeps = try JSONDecoder().decode([StationDepartures].self, from: jsonData)
-                updateManager.lastDepUpdateFinished = Date()
+//                updateManager.lastDepUpdateFinished = Date()
             } catch {
                 updateManager.stnsDeps = []
             }

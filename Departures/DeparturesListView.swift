@@ -28,11 +28,9 @@ struct DeparturesListView: View {
                 .lineLimit(1)
             Text(updateText)
                 .padding([.trailing], 15)
-                .animation(.easeInOut(duration: 1.0), value: updateText)
         }
-        .padding([.top, .bottom], 5)
-        .background(.opacity(0.1))
-        .font(.caption)
+        .frame(minHeight: 40)
+        .background(.opacity(0.05))
         
         if updateManager.lastDepUpdateFinished != nil {
             List {
@@ -47,6 +45,7 @@ struct DeparturesListView: View {
             .refreshable { await updateManager.updateDepartures(force: true) }
         } else {
             Text("Loading nearby departures...")
+                .frame(maxHeight: .infinity)
         }
     }
 }

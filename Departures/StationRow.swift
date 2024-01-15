@@ -20,19 +20,20 @@ struct StationRow: View {
             Grid(verticalSpacing: 2.0) {
                 let mergedDepartures = stnDeps.mergedDepartures
                 ForEach(mergedDepartures.indices, id: \.self) { idx in
-                    let mergedDeps = mergedDepartures[idx]
-                    let times: String = mergedDeps.map { dep in "\(dep.arrivingInMin())'" }
+                    let firstDep: Departure = mergedDepartures[idx].first!
+                    let times: String = mergedDepartures[idx].map { dep in "\(dep.arrivingInMin())'" }
                                             .joined(separator: ", ")
                     GridRow {
                         HStack {
-                            Text(mergedDeps.first!.destinationShort)
-                            Text(mergedDeps.first!.lineFormatted)
+                            Text(firstDep.destinationShort)
+                            Text(firstDep.lineFormatted)
                                 .font(.caption2)
                                 .bold()
-                                .padding(2.0)
-                                .background(mergedDeps.first!.backgroundColor)
-                                .foregroundStyle(mergedDeps.first!.foregroundColor(environment))
-                                .cornerRadius(/*@START_MENU_TOKEN@*/3.0/*@END_MENU_TOKEN@*/)
+                                .padding([.top, .bottom], 2.0)
+                                .padding([.trailing, .leading], 4.0)
+                                .background(firstDep.backgroundColor)
+                                .foregroundStyle(firstDep.foregroundColor(environment))
+                                .cornerRadius(3.0)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         
@@ -44,7 +45,7 @@ struct StationRow: View {
             }
         }
         .listRowBackground(Color.clear)
-        .listRowSeparator(/*@START_MENU_TOKEN@*/.visible/*@END_MENU_TOKEN@*/, edges: [.bottom])
+        .listRowSeparator(.visible, edges: [.bottom])
     }
 }
 

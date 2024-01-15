@@ -14,7 +14,7 @@ struct Departure: Codable, Identifiable, Equatable, Hashable {
     let mode: String
     let destination: String
     let arrival_time: String
-
+    
     var destinationShort: String {
         return destination
             .replacingOccurrences(of: " Underground Station", with: "")
@@ -28,9 +28,7 @@ struct Departure: Codable, Identifiable, Equatable, Hashable {
         return special[line] ?? line.capitalized
     }
     
-    var backgroundColor: Color {
-        return Color(line)
-    }
+    var backgroundColor: Color { Color(line) }
     
     func foregroundColor(_ environment: EnvironmentValues) -> Color {
         let resolved = backgroundColor.resolve(in: environment)
@@ -42,7 +40,9 @@ struct Departure: Codable, Identifiable, Equatable, Hashable {
         let arrivalDate = ISO8601DateFormatter().date(from: arrival_time)!
         return Int((arrivalDate.timeIntervalSinceNow / 60).rounded(.down))
     }
-    
+
+    // TODO: Check if this Equatable impl prevents UI data from updating if destination/line remain the same and only arrival_time changes
+    // Now added arrival_time comparison to StationDepartures equality function to hopefully prevent this possible issue
     static func == (lhs: Departure, rhs: Departure) -> Bool {
         return lhs.destination == rhs.destination && lhs.line == rhs.line
     }
@@ -83,9 +83,7 @@ struct StationDepartures: Codable, Identifiable, Equatable {
     let station: Station
     let departures: [Departure]
     
-    var id: String {
-        return station.id
-    }
+    var id: String { station.id }
     
     var mergedDepartures: [[Departure]] {
         var out: [[Departure]] = []
@@ -103,6 +101,8 @@ struct StationDepartures: Codable, Identifiable, Equatable {
     }
     
     static func == (lhs: StationDepartures, rhs: StationDepartures) -> Bool {
-        return lhs.station == rhs.station && lhs.departures == rhs.departures
+        return lhs.station == rhs.station
+        && lhs.departures == rhs.departures
+        && lhs.departures.map { dep in dep.arrival_time } == rhs.departures.map { dep in dep.arrival_time }
     }
 }
