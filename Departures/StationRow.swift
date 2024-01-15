@@ -12,7 +12,7 @@ struct StationRow: View {
     let stnDeps: StationDepartures
     
     var body: some View {
-        VStack{
+        VStack {
             Text(stnDeps.station.nameShort)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .font(.title2)
@@ -21,14 +21,12 @@ struct StationRow: View {
                 let mergedDepartures = stnDeps.mergedDepartures
                 ForEach(mergedDepartures.indices, id: \.self) { idx in
                     let mergedDeps = mergedDepartures[idx]
-                    let dest = Departure.shortenDestName(mergedDeps.first!.destination)
-                    let line = Departure.formatLineName(mergedDeps.first!.line)
                     let times: String = mergedDeps.map { dep in "\(dep.arrivingInMin())'" }
                                             .joined(separator: ", ")
                     GridRow {
                         HStack {
-                            Text(dest)
-                            Text(line)
+                            Text(mergedDeps.first!.destinationShort)
+                            Text(mergedDeps.first!.lineFormatted)
                                 .font(.caption2)
                                 .bold()
                                 .padding(2.0)
@@ -37,16 +35,16 @@ struct StationRow: View {
                                 .cornerRadius(/*@START_MENU_TOKEN@*/3.0/*@END_MENU_TOKEN@*/)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-//                        .animation(.easeInOut(duration: 1.0), value: mergedDeps)
                         
                         Text(times)
                             .frame(maxWidth: 120, alignment: .trailing)
-//                            .animation(.easeInOut(duration: 1.0), value: times)
                     }
                     .lineLimit(1)
                 }
             }
         }
+        .listRowBackground(Color.clear)
+        .listRowSeparator(/*@START_MENU_TOKEN@*/.visible/*@END_MENU_TOKEN@*/, edges: [.bottom])
     }
 }
 

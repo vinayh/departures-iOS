@@ -6,16 +6,28 @@
 //
 
 import SwiftUI
-import CoreLocation
 
 
-struct Departure: Codable, Identifiable, Equatable {
+struct Departure: Codable, Identifiable, Equatable, Hashable {
     let id: String
     let line: String
     let mode: String
     let destination: String
     let arrival_time: String
 
+    var destinationShort: String {
+        return destination
+            .replacingOccurrences(of: " Underground Station", with: "")
+            .replacingOccurrences(of: " Rail Station", with: "")
+            .replacingOccurrences(of: " DLR Station", with: "")
+    }
+    
+    var lineFormatted: String {
+        let special = ["hammersmith-city": "H&C",
+                       "dlr": "DLR"]
+        return special[line] ?? line.capitalized
+    }
+    
     var backgroundColor: Color {
         return Color(line)
     }
@@ -31,25 +43,13 @@ struct Departure: Codable, Identifiable, Equatable {
         return Int((arrivalDate.timeIntervalSinceNow / 60).rounded(.down))
     }
     
-    static func shortenDestName(_ dest: String) -> String {
-        return dest
-            .replacingOccurrences(of: " Underground Station", with: "")
-            .replacingOccurrences(of: " Rail Station", with: "")
-            .replacingOccurrences(of: " DLR Station", with: "")
-    }
-    
-    static func formatLineName(_ line: String) -> String {
-        let special = ["hammersmith-city": "H&C",
-                       "dlr": "DLR"]
-        if special.keys.contains(line) {
-            return special[line]!
-        } else {
-            return line.capitalized
-        }
-    }
-    
     static func == (lhs: Departure, rhs: Departure) -> Bool {
         return lhs.destination == rhs.destination && lhs.line == rhs.line
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(destination)
+        hasher.combine(line)
     }
     
     static func example() -> Departure {
@@ -88,18 +88,14 @@ struct StationDepartures: Codable, Identifiable, Equatable {
     }
     
     var mergedDepartures: [[Departure]] {
-        func uniqueRouteKey(_ dep: Departure) -> String {
-            return "\(dep.destination)%\(dep.line)"
-        }
-        
         var out: [[Departure]] = []
-        var destinationsSeen: [String: Int] = [:]
+        var destinationsSeen: [Departure: Int] = [:]
         
         for d in departures {
-            if let idx = destinationsSeen[uniqueRouteKey(d)] {
+            if let idx = destinationsSeen[d] {
                 out[idx].append(d)
             } else {
-                destinationsSeen[uniqueRouteKey(d)] = out.endIndex
+                destinationsSeen[d] = out.endIndex
                 out.append([d])
             }
         }

@@ -10,13 +10,14 @@ import CoreLocation
 
 class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
-    private var lastUpdateStarted: Date? = nil
     private let geocoder = CLGeocoder()
+    private var lastDepUpdateStarted: Date? = nil
     
     @Published var location: CLLocation? = nil
     @Published var locationString: String = "Unknown"
     @Published var stnsDeps: [StationDepartures] = [StationDepartures]()
-    @Published var depsLastUpdated: Date? = nil
+    @Published var lastDepUpdateFinished: Date? = nil
+    @Published var numCurrentlyUpdating: Int = 0
     
     override init() {
         super.init()
@@ -28,24 +29,6 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         startUpdatingDepartures()
     }
     
-    
-    private static func reqUrl(loc: CLLocation) -> String {
-//        TODO: Use stop types preferences
-//        var stopTypes: [String] = []
-//        if configuration.metroStations {
-//            stopTypes.append("NaptanMetroStation")
-//        }
-//        if configuration.railStations {
-//            stopTypes.append("NaptanRailStation")
-//        }
-//        if configuration.busStations {
-//            stopTypes.append("NaptanPublicBusCoachTram")
-//        }
-//        let stopTypesString = stopTypes.joined(separator: ",")
-        let stopTypesString = "NaptanMetroStation,NaptanRailStation"
-        return "https://departures-backend.azurewebsites.net/api/nearest?lat=\(loc.coordinate.latitude)&lng=\(loc.coordinate.longitude)&stopTypes=\(stopTypesString)"
-    }
-    
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         location = locations.last
         guard let location = location else {
@@ -54,11 +37,11 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         reverseGeocode(loc: location)
         Task {
-            print("Location requested updating departures")
+            print("locationManager - updating departures")
             await updateDepartures()
         }
     }
-
+    
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         location = nil
         locationString = "Error"
@@ -80,33 +63,50 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
     }
     
-    func reverseGeocode(loc: CLLocation) {
+    private func reverseGeocode(loc: CLLocation) {
         locationString = String(format: "[%.2f, %.2f]", loc.coordinate.latitude, loc.coordinate.longitude)
         geocoder.reverseGeocodeLocation(loc, completionHandler: {(placemarks, error) -> Void in
-            if error == nil && placemarks != nil {
-                self.locationString = placemarks!.first?.postalCode ?? self.locationString
+            if let postalCode = placemarks?.first?.postalCode {
+                self.locationString = postalCode
             }
         })
     }
     
+    private static func reqUrl(loc: CLLocation) -> URL {
+        //        TODO: Use stop types preferences
+        //        var stopTypes: [String] = []
+        //        if configuration.metroStations {
+        //            stopTypes.append("NaptanMetroStation")
+        //        }
+        //        if configuration.railStations {
+        //            stopTypes.append("NaptanRailStation")
+        //        }
+        //        if configuration.busStations {
+        //            stopTypes.append("NaptanPublicBusCoachTram")
+        //        }
+        //        let stopTypesString = stopTypes.joined(separator: ",")
+        let stopTypesString = "NaptanMetroStation,NaptanRailStation"
+        let urlString = "https://departures-backend.azurewebsites.net/api/nearest?lat=\(loc.coordinate.latitude)&lng=\(loc.coordinate.longitude)&stopTypes=\(stopTypesString)"
+        return URL(string: urlString)!
+    }
     
+    @MainActor
     private func updateDeparturesHelper(loc: CLLocation) async {
-        let url = URL(string: UpdateManager.reqUrl(loc: loc))!
+        self.numCurrentlyUpdating += 1
+        let url = UpdateManager.reqUrl(loc: loc)
         do {
             let (data, _) = try await URLSession.shared.data(from: url) // Fetch JSON
-            
-            try await MainActor.run {
-                stnsDeps = try JSONDecoder().decode([StationDepartures].self, from: data) // Parse JSON
-                depsLastUpdated = Date()
-            }
-            print("\tFinished updating departures for location \(loc.coordinate.latitude), \(loc.coordinate.longitude), count: \(stnsDeps.count)")
+            stnsDeps = try JSONDecoder().decode([StationDepartures].self, from: data) // Parse JSON
+            lastDepUpdateFinished = Date()
+            print("\tFinished updating departures for location \(locationString), station count: \(stnsDeps.count)")
         } catch {
-            print("\tError fetching departures, URL: \(url)")
+            print("\tError fetching departures, req URL: \(url.absoluteString)")
         }
+        self.numCurrentlyUpdating -= 1
     }
     
     func updateDepartures(force: Bool = false) async {
-        if !force && lastUpdateStarted != nil && lastUpdateStarted!.timeIntervalSinceNow > -120.0 {
+        if !force && lastDepUpdateStarted != nil && lastDepUpdateStarted!.timeIntervalSinceNow > -120.0 {
             print("\tData is <2min old and force update is not specified, skipping...")
             return
         }
@@ -114,17 +114,16 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             print("\tLocation not available")
             return
         }
-        lastUpdateStarted = Date()
+        lastDepUpdateStarted = Date()
         print("\tUpdating departures with location \(locationString)...")
         await updateDeparturesHelper(loc: loc)
     }
     
     private func startUpdatingDepartures(secInterval: Double = 180.0) {
         Task {
-            print("Dispatch queue requested updating departures")
+            print("DispatchQueue - updating departures")
             await updateDepartures()
         }
-        
         DispatchQueue.main.asyncAfter(deadline: .now() + secInterval) { [weak self] in
             self?.startUpdatingDepartures()
         }
@@ -136,6 +135,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             do {
                 let jsonData = try Data(contentsOf: url)
                 updateManager.stnsDeps = try JSONDecoder().decode([StationDepartures].self, from: jsonData)
+                updateManager.lastDepUpdateFinished = Date()
             } catch {
                 updateManager.stnsDeps = []
             }
@@ -144,6 +144,4 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         return updateManager
     }
-    
-    // TODO: Maybe add fn to get location from postcode or allowing user to set lat/lon
 }
