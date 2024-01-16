@@ -7,7 +7,6 @@
 
 import WidgetKit
 import SwiftUI
-import CoreLocation
 
 struct DeparturesEntry: TimelineEntry {
     let date: Date
@@ -20,27 +19,27 @@ struct DeparturesWidgetEntryView : View {
     var entry: DeparturesEntry
     
     @Environment(\.widgetFamily)
-    var family
+    private var family
     
-    var numStations: Int {
+    private var numStations: Int {
         return [WidgetFamily.accessoryRectangular: 4,
                 WidgetFamily.systemMedium: 6,
                 WidgetFamily.systemLarge: 8][family] ?? 6
     }
     
-    var numDeps: Int {
+    private var numDeps: Int {
         return [WidgetFamily.accessoryRectangular: 2,
                 WidgetFamily.systemMedium: 3,
                 WidgetFamily.systemLarge: 4][family] ?? 3
     }
     
-    var textSizeStn: CGFloat {
+    private var textSizeStn: CGFloat {
         return (CGFloat)([WidgetFamily.accessoryRectangular: 8,
                 WidgetFamily.systemMedium: 10,
                 WidgetFamily.systemLarge: 12][family] ?? 8)
     }
     
-    var textSizeDep: CGFloat {
+    private var textSizeDep: CGFloat {
         return (CGFloat)([WidgetFamily.accessoryRectangular: 7,
                 WidgetFamily.systemMedium: 8,
                 WidgetFamily.systemLarge: 9][family] ?? 6)
@@ -115,8 +114,11 @@ struct DeparturesWidgetEntryView : View {
 struct DeparturesTimelineProvider: AppIntentTimelineProvider {
     typealias Entry = DeparturesEntry
     typealias Intent = ConfigurationAppIntent
+    var updateManager: UpdateManager
     
-    private let updateManager = UpdateManager()
+    init(_ manager: UpdateManager) {
+        updateManager = manager
+    }
     
     func placeholder(in context: Context) -> DeparturesEntry {
         return DeparturesEntry(date: Date(),
@@ -147,15 +149,22 @@ struct DeparturesTimelineProvider: AppIntentTimelineProvider {
 
 struct DeparturesWidget: Widget {
     let kind: String = "DeparturesWidget"
+    let updateManager = UpdateManager(identifier: "com.vinayh.Departures.DeparturesWidget")
     
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: DeparturesTimelineProvider()) { entry in
+        updateManager.startUpdatingDepartures()
+        
+        return AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: DeparturesTimelineProvider(updateManager)) { entry in
             DeparturesWidgetEntryView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Departures")
         .description("View upcoming TfL departures near your location.")
         .supportedFamilies([.accessoryRectangular, .systemMedium])
+        .onBackgroundURLSessionEvents(matching: "com.vinayh.Departures.DeparturesWidget") { (identifier, completion) in
+            print("onBackgroundURLSessionEvents function called")
+            updateManager.completion = completion
+        }
     }
 }
 

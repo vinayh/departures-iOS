@@ -106,3 +106,10 @@ struct StationDepartures: Codable, Identifiable, Equatable {
         && lhs.departures.map { dep in dep.arrival_time } == rhs.departures.map { dep in dep.arrival_time }
     }
 }
+
+struct Response: Codable {
+    let stnsDeps: [StationDepartures]
+    let lat: Float
+    let lng: Float
+}
+

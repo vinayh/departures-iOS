@@ -9,16 +9,16 @@ import WidgetKit
 import AppIntents
 
 struct ConfigurationAppIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource = "Configuration"
-    static var description = IntentDescription("This is an example widget.")
+    static var title: LocalizedStringResource = "Departures"
+    static var description = IntentDescription("Choose the types of stations/stops to be displayed.")
 
-    @Parameter(title: "Underground, DLR", default: true)
+    @Parameter(title: "Underground and DLR", default: true)
     var metroStations: Bool
     
-    @Parameter(title: "Rail, Overground", default: true)
+    @Parameter(title: "Elizabeth Line and Overground", default: true)
     var railStations: Bool
     
-    @Parameter(title: "Bus", default: false)
+    @Parameter(title: "Bus and Tram", default: false)
     var busStations: Bool
 }
 

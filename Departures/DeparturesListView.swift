@@ -31,7 +31,11 @@ struct DeparturesListView: View {
         }
         .frame(minHeight: 40)
         .background(.opacity(0.05))
-        
+        if updateManager.numCurrentlyUpdating < 1 {
+            Button("Refresh") {
+                updateManager.updateDepartures(force: true)
+            }
+        }
         if updateManager.lastDepUpdateFinished != nil {
             List {
                 ForEach(updateManager.stnsDeps) { stnDeps in
@@ -42,7 +46,7 @@ struct DeparturesListView: View {
             .zIndex(1)
             .animation(.easeInOut(duration: 1.0), value: updateManager.stnsDeps)
             .listStyle(.inset)
-            .refreshable { await updateManager.updateDepartures(force: true) }
+//            .refreshable {  }
         } else {
             Text("Loading nearby departures...")
                 .frame(maxHeight: .infinity)
