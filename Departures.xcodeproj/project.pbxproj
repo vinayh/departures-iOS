@@ -31,6 +31,8 @@
 		A192C1892B51819D00793A62 /* StationRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A192C1882B51819D00793A62 /* StationRow.swift */; };
 		A1C957412B4C4B8100D73E34 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A18E54CF2B48840100FC7285 /* Assets.xcassets */; };
 		A1D52B9A2B506E4300C4A48A /* UpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D52B992B506E4300C4A48A /* UpdateManager.swift */; };
+		A1F939BD2B56C30F00B651EB /* UpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D52B992B506E4300C4A48A /* UpdateManager.swift */; };
+		A1F939BE2B56C32B00B651EB /* StationDepartures.swift in Sources */ = {isa = PBXBuildFile; fileRef = A117915B2B505D5C008414B7 /* StationDepartures.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -423,9 +425,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1F939BD2B56C30F00B651EB /* UpdateManager.swift in Sources */,
 				A18E55032B48857200FC7285 /* DeparturesWidget.swift in Sources */,
 				A18E55012B48857200FC7285 /* DeparturesWidgetBundle.swift in Sources */,
 				A18E55162B48890400FC7285 /* AppIntent.swift in Sources */,
+				A1F939BE2B56C32B00B651EB /* StationDepartures.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

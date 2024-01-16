@@ -21,3 +21,15 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
     @Parameter(title: "Bus", default: false)
     var busStations: Bool
 }
+
+#if DEBUG
+extension ConfigurationAppIntent {
+    static var example: ConfigurationAppIntent {
+        let intent = ConfigurationAppIntent()
+        intent.metroStations = true
+        intent.railStations = true
+        intent.busStations = false
+        return intent
+    }
+}
+#endif

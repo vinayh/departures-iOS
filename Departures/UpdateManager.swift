@@ -74,26 +74,30 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         })
     }
     
-    private static func reqUrl(loc: CLLocation) -> URL {
+    private static func reqUrl(loc: CLLocation, configuration: ConfigurationAppIntent? = nil) -> URL {
         //        TODO: Use stop types preferences
-        //        var stopTypes: [String] = []
-        //        if configuration.metroStations {
-        //            stopTypes.append("NaptanMetroStation")
-        //        }
-        //        if configuration.railStations {
-        //            stopTypes.append("NaptanRailStation")
-        //        }
-        //        if configuration.busStations {
-        //            stopTypes.append("NaptanPublicBusCoachTram")
-        //        }
-        //        let stopTypesString = stopTypes.joined(separator: ",")
-        let stopTypesString = "NaptanMetroStation,NaptanRailStation"
+        var stopTypesString: String = "NaptanMetroStation,NaptanRailStation"
+        
+        if let cfg = configuration {
+            var stopTypes: [String] = []
+            if cfg.metroStations {
+                stopTypes.append("NaptanMetroStation")
+            }
+            if cfg.railStations {
+                stopTypes.append("NaptanRailStation")
+            }
+            if cfg.busStations {
+                stopTypes.append("NaptanPublicBusCoachTram")
+            }
+            stopTypesString = stopTypes.joined(separator: ",")
+        }
+        
         let urlString = "https://departures-backend.azurewebsites.net/api/nearest?lat=\(loc.coordinate.latitude)&lng=\(loc.coordinate.longitude)&stopTypes=\(stopTypesString)"
         return URL(string: urlString)!
     }
     
     @MainActor
-    private func updateDeparturesHelper(loc: CLLocation) async {
+    private func updateDeparturesHelper(loc: CLLocation, configuration: ConfigurationAppIntent? = nil) async {
         self.numCurrentlyUpdating += 1
         let url = UpdateManager.reqUrl(loc: loc)
         do {
@@ -107,7 +111,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         self.numCurrentlyUpdating -= 1
     }
     
-    func updateDepartures(force: Bool = false) async {
+    func updateDepartures(force: Bool = false, configuration: ConfigurationAppIntent? = nil) async {
         if !force && lastDepUpdateStarted != nil && lastDepUpdateStarted!.timeIntervalSinceNow > -120.0 {
             logger.log("Data is <2min old and force update is not specified, skipping...")
             return
@@ -118,7 +122,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         lastDepUpdateStarted = Date()
         logger.log("Updating departures with location \(self.locationString)...")
-        await updateDeparturesHelper(loc: loc)
+        await updateDeparturesHelper(loc: loc, configuration: configuration)
     }
     
     private func startUpdatingDepartures(secInterval: Double = 180.0) {
