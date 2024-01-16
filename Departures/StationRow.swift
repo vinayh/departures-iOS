@@ -21,7 +21,7 @@ struct StationRow: View {
                 let mergedDepartures = stnDeps.mergedDepartures
                 ForEach(mergedDepartures.indices, id: \.self) { idx in
                     let firstDep: Departure = mergedDepartures[idx].first!
-                    let times: String = mergedDepartures[idx].map { dep in "\(dep.arrivingInMin())'" }
+                    let times: String = mergedDepartures[idx].map { dep in "\(dep.arrivingInMin)'" }
                                             .joined(separator: ", ")
                     GridRow {
                         HStack {

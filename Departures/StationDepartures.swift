@@ -28,17 +28,17 @@ struct Departure: Codable, Identifiable, Equatable, Hashable {
         return special[line] ?? line.capitalized
     }
     
+    var arrivingInMin: Int {
+        let arrivalDate = ISO8601DateFormatter().date(from: arrival_time)!
+        return Int((arrivalDate.timeIntervalSinceNow / 60).rounded(.down))
+    }
+    
     var backgroundColor: Color { Color(line) }
     
     func foregroundColor(_ environment: EnvironmentValues) -> Color {
         let resolved = backgroundColor.resolve(in: environment)
         let luminance = 0.2126 * resolved.red + 0.7152 * resolved.green + 0.0722 * resolved.green
         return luminance < 0.6 ? .white : .black
-    }
-    
-    func arrivingInMin() -> Int {
-        let arrivalDate = ISO8601DateFormatter().date(from: arrival_time)!
-        return Int((arrivalDate.timeIntervalSinceNow / 60).rounded(.down))
     }
 
     // TODO: Check if this Equatable impl prevents UI data from updating if destination/line remain the same and only arrival_time changes

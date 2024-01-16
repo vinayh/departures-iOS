@@ -98,6 +98,8 @@
 		A18E55142B48880600FC7285 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A192C1882B51819D00793A62 /* StationRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationRow.swift; sourceTree = "<group>"; };
 		A1D52B992B506E4300C4A48A /* UpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateManager.swift; sourceTree = "<group>"; };
+		A1F939BB2B56C0C000B651EB /* Departures.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Departures.entitlements; sourceTree = "<group>"; };
+		A1F939BC2B56C0EF00B651EB /* DeparturesWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DeparturesWidgetExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -137,6 +139,7 @@
 		A18E54BF2B48840000FC7285 = {
 			isa = PBXGroup;
 			children = (
+				A1F939BC2B56C0EF00B651EB /* DeparturesWidgetExtension.entitlements */,
 				A18E54CA2B48840000FC7285 /* Departures */,
 				A18E54DB2B48840100FC7285 /* DeparturesTests */,
 				A18E54E52B48840100FC7285 /* DeparturesUITests */,
@@ -160,6 +163,7 @@
 		A18E54CA2B48840000FC7285 /* Departures */ = {
 			isa = PBXGroup;
 			children = (
+				A1F939BB2B56C0C000B651EB /* Departures.entitlements */,
 				A18E55142B48880600FC7285 /* Info.plist */,
 				A18E54CB2B48840000FC7285 /* DeparturesApp.swift */,
 				A11791582B505964008414B7 /* sampleDepartures.json */,
@@ -571,6 +575,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Departures/Departures.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Departures/Preview Content\"";
@@ -603,6 +608,7 @@
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Departures/Departures.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"Departures/Preview Content\"";
@@ -706,6 +712,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = DeparturesWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = JWX3WHWDPD;
@@ -733,6 +740,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = DeparturesWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = JWX3WHWDPD;
