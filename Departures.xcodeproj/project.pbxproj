@@ -12,7 +12,6 @@
 		A11791592B505964008414B7 /* sampleDepartures.json in Resources */ = {isa = PBXBuildFile; fileRef = A11791582B505964008414B7 /* sampleDepartures.json */; };
 		A117915A2B505964008414B7 /* sampleDepartures.json in Resources */ = {isa = PBXBuildFile; fileRef = A11791582B505964008414B7 /* sampleDepartures.json */; };
 		A117915C2B505D5C008414B7 /* StationDepartures.swift in Sources */ = {isa = PBXBuildFile; fileRef = A117915B2B505D5C008414B7 /* StationDepartures.swift */; };
-		A11A4FC02B57FF1800886ABD /* WidgetUpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A4FBF2B57FF1800886ABD /* WidgetUpdateManager.swift */; };
 		A17721BA2B52F82E00DC3EB8 /* DeparturesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17721B92B52F82E00DC3EB8 /* DeparturesListView.swift */; };
 		A17721BC2B52F92400DC3EB8 /* DeparturesMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A17721BB2B52F92400DC3EB8 /* DeparturesMapView.swift */; };
 		A18E54CC2B48840000FC7285 /* DeparturesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18E54CB2B48840000FC7285 /* DeparturesApp.swift */; };
@@ -79,7 +78,6 @@
 		A11791562B50580D008414B7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A11791582B505964008414B7 /* sampleDepartures.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sampleDepartures.json; sourceTree = "<group>"; };
 		A117915B2B505D5C008414B7 /* StationDepartures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationDepartures.swift; sourceTree = "<group>"; };
-		A11A4FBF2B57FF1800886ABD /* WidgetUpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetUpdateManager.swift; sourceTree = "<group>"; };
 		A17721B92B52F82E00DC3EB8 /* DeparturesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturesListView.swift; sourceTree = "<group>"; };
 		A17721BB2B52F92400DC3EB8 /* DeparturesMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeparturesMapView.swift; sourceTree = "<group>"; };
 		A18E54C82B48840000FC7285 /* Departures.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Departures.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -226,7 +224,6 @@
 				A18E55042B48857200FC7285 /* AppIntent.swift */,
 				A18E55062B48857300FC7285 /* Assets.xcassets */,
 				A18E55082B48857300FC7285 /* Info.plist */,
-				A11A4FBF2B57FF1800886ABD /* WidgetUpdateManager.swift */,
 			);
 			path = DeparturesWidget;
 			sourceTree = "<group>";
@@ -432,7 +429,6 @@
 				A18E55032B48857200FC7285 /* DeparturesWidget.swift in Sources */,
 				A18E55012B48857200FC7285 /* DeparturesWidgetBundle.swift in Sources */,
 				A18E55162B48890400FC7285 /* AppIntent.swift in Sources */,
-				A11A4FC02B57FF1800886ABD /* WidgetUpdateManager.swift in Sources */,
 				A1F939BE2B56C32B00B651EB /* StationDepartures.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

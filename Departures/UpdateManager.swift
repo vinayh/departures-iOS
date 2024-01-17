@@ -14,6 +14,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let geocoder = CLGeocoder()
     var lastDepUpdateStarted: Date? = nil
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "UpdateManager")
+    private let updateLock = NSLock()
     
     @Published var location: CLLocation? = nil
     @Published var locationString: String = "Unknown"
@@ -180,7 +181,7 @@ struct Cache: Codable {
         let encoded = UserDefaults(suiteName: "group.com.vinayh.Departures")!.object(forKey: "stnsDeps") as? Data
         if let encoded = encoded {
             if let cache = try? JSONDecoder().decode(Cache.self, from: encoded) {
-                if Date().timeIntervalSince1970 - cache.timeSince1970 < 30.0 {
+                if Date().timeIntervalSince1970 - cache.timeSince1970 < 60.0 {
                     print("Retrieved departures from:", Date(timeIntervalSince1970: cache.timeSince1970).formatted(date: .omitted, time: .shortened))
                     return cache
                 } else {
