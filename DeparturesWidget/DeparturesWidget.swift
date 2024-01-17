@@ -114,9 +114,9 @@ struct DeparturesWidgetEntryView : View {
 struct DeparturesTimelineProvider: AppIntentTimelineProvider {
     typealias Entry = DeparturesEntry
     typealias Intent = ConfigurationAppIntent
-    var updateManager: UpdateManager
+    var updateManager: WidgetUpdateManager
     
-    init(_ manager: UpdateManager) {
+    init(_ manager: WidgetUpdateManager) {
         updateManager = manager
     }
     
@@ -136,8 +136,10 @@ struct DeparturesTimelineProvider: AppIntentTimelineProvider {
     }
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<DeparturesEntry> {
+        print("Widget updating")
         await updateManager.updateDepartures(force: true, configuration: configuration)
-        let entry: DeparturesEntry = DeparturesEntry(date: Date(),
+        print("Widget finished updating")
+        let entry: DeparturesEntry = DeparturesEntry(date: updateManager.lastDepUpdateFinished!,
                                                      configuration: configuration,
                                                      locString: updateManager.locationString,
                                                      stnsDeps: updateManager.stnsDeps)
@@ -149,10 +151,10 @@ struct DeparturesTimelineProvider: AppIntentTimelineProvider {
 
 struct DeparturesWidget: Widget {
     let kind: String = "DeparturesWidget"
-    let updateManager = UpdateManager(identifier: "com.vinayh.Departures.DeparturesWidget")
+    let updateManager = WidgetUpdateManager(identifier: "com.vinayh.Departures.DeparturesWidget")
     
     var body: some WidgetConfiguration {
-        updateManager.startUpdatingDepartures()
+//        updateManager.startUpdatingDepartures()
         
         return AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: DeparturesTimelineProvider(updateManager)) { entry in
             DeparturesWidgetEntryView(entry: entry)
