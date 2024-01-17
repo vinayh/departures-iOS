@@ -12,7 +12,7 @@ struct DeparturesApp: App {
     @StateObject var updateManager = UpdateManager()
     
     var body: some Scene {
-//        updateManager.startUpdatingDepartures()
+        updateManager.locationManager.startUpdatingLocation()
 
         return WindowGroup {
             DeparturesView()

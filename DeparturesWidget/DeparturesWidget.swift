@@ -12,7 +12,7 @@ struct DeparturesEntry: TimelineEntry {
     let date: Date
     let configuration: ConfigurationAppIntent
     let locString: String
-    let lastDepUpdateFinished: Date?
+    let dateDeparturesUpdated: Date?
     let stnsDeps: [StationDepartures]?
 }
 
@@ -83,7 +83,7 @@ struct DeparturesWidgetEntryView : View {
         // TODO: Improve text adaptation to widget type/size, currently works passably for small and medium widgets
         VStack(spacing: 0) {
             HStack {
-                Text("Updated: \(entry.lastDepUpdateFinished?.formatted(date: .omitted, time: .shortened) ?? "Error")")
+                Text("Updated: \(entry.dateDeparturesUpdated?.formatted(date: .omitted, time: .shortened) ?? "Error")")
                 Text(entry.locString)
                 Text(stopTypes)
             }
@@ -115,9 +115,9 @@ struct DeparturesWidgetEntryView : View {
 struct DeparturesTimelineProvider: AppIntentTimelineProvider {
     typealias Entry = DeparturesEntry
     typealias Intent = ConfigurationAppIntent
-    var updateManager: UpdateManager
+    var updateManager: WidgetUpdateManager
     
-    init(_ manager: UpdateManager) {
+    init(_ manager: WidgetUpdateManager) {
         updateManager = manager
     }
     
@@ -125,7 +125,7 @@ struct DeparturesTimelineProvider: AppIntentTimelineProvider {
         return DeparturesEntry(date: Date(),
                                configuration: ConfigurationAppIntent(),
                                locString: updateManager.locationString,
-                               lastDepUpdateFinished: Date(),
+                               dateDeparturesUpdated: Date(),
                                stnsDeps: UpdateManager.example().stnsDeps)
     }
     
@@ -133,19 +133,19 @@ struct DeparturesTimelineProvider: AppIntentTimelineProvider {
         let entry = DeparturesEntry(date: Date(),
                                     configuration: ConfigurationAppIntent(),
                                     locString: updateManager.locationString,
-                                    lastDepUpdateFinished: Date(),
+                                    dateDeparturesUpdated: Date(),
                                     stnsDeps: UpdateManager.example().stnsDeps)
         return entry
     }
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<DeparturesEntry> {
-        print("Widget updating")
-        await updateManager.updateDepartures(force: true, configuration: configuration)
-        print("Widget finished updating")
-        let entry: DeparturesEntry = DeparturesEntry(date: Date(),
+//        print("timeline - Widget updating")
+        _ = await updateManager.updateDepartures(configuration: configuration)
+//        print(updatedData != nil ? "timeline - Widget successfully updated" : "timeline - Widget update error")
+        let entry: DeparturesEntry = DeparturesEntry(date: updateManager.dateDeparturesUpdated ?? Date(),
                                                      configuration: configuration,
                                                      locString: updateManager.locationString,
-                                                     lastDepUpdateFinished: updateManager.lastDepUpdateFinished,
+                                                     dateDeparturesUpdated: updateManager.dateDeparturesUpdated,
                                                      stnsDeps: updateManager.stnsDeps)
         let nextUpdate = Calendar.current.date(byAdding: DateComponents(minute: 5), to: Date())!
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
@@ -155,11 +155,9 @@ struct DeparturesTimelineProvider: AppIntentTimelineProvider {
 
 struct DeparturesWidget: Widget {
     let kind: String = "DeparturesWidget"
-    let updateManager = UpdateManager()
+    let updateManager = WidgetUpdateManager()
     
     var body: some WidgetConfiguration {
-//        updateManager.startUpdatingDepartures()
-        
         return AppIntentConfiguration(kind: kind, intent: ConfigurationAppIntent.self, provider: DeparturesTimelineProvider(updateManager)) { entry in
             DeparturesWidgetEntryView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
@@ -170,11 +168,10 @@ struct DeparturesWidget: Widget {
     }
 }
 
-
 #Preview(as: .systemMedium) {
     DeparturesWidget()
 } timeline: {
-    DeparturesEntry(date: .now, configuration: .example, locString: "PREVIEW LOC", lastDepUpdateFinished: .now, stnsDeps: UpdateManager.example().stnsDeps)
+    DeparturesEntry(date: .now, configuration: .example, locString: "PREVIEW LOC", dateDeparturesUpdated: .now, stnsDeps: UpdateManager.example().stnsDeps)
 //    let updateManager = UpdateManager()
 //    DeparturesEntry(date: .now, configuration: .example, locString: updateManager.locationString, stnsDeps: updateManager.stnsDeps)
 }
