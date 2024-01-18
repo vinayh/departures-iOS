@@ -14,7 +14,7 @@ class WidgetUpdateManager: UpdateManager {
     var hasUpdatedOnce = false
     
     override func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        let location = locations.last
+        location = locations.last
         reverseGeocode(loc: location)
         logger.log("locationManager - Widget updating departures")
         Task {
@@ -23,7 +23,7 @@ class WidgetUpdateManager: UpdateManager {
             if !hasUpdatedOnce && success {
                 hasUpdatedOnce = true
                 WidgetCenter.shared.reloadTimelines(ofKind: "DeparturesWidget")
-//                print("Reloading widget timelines")
+                //                print("Reloading widget timelines")
             }
         }
     }
@@ -32,8 +32,10 @@ class WidgetUpdateManager: UpdateManager {
 class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     let locationManager = CLLocationManager()
     private let geocoder = CLGeocoder()
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "UpdateManager")
     private let updater = Updater()
+    private var locUpdateTask: Task<Bool, Error>? = nil
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "UpdateManager")
+    private var locManagerUpdating = false
     
     @Published var updating = false
     @Published var location: CLLocation? = nil
@@ -47,14 +49,20 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.requestWhenInUseAuthorization()
         locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
         locationManager.distanceFilter = 500
+        locationManager.startUpdatingLocation()
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        let location = locations.last
+        location = locations.last
         reverseGeocode(loc: location)
         logger.log("locationManager - updating departures")
-        Task {
-            await updateDepartures(loc: location)
+        if !locManagerUpdating {
+            locManagerUpdating = true
+            locUpdateTask = Task {
+                let success = await updateDepartures(loc: location)
+                locManagerUpdating = false
+                return success
+            }
         }
     }
     
@@ -96,30 +104,31 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @MainActor
     func updateDepartures(force: Bool = false, configuration: ConfigurationAppIntent? = nil, loc: CLLocation? = nil) async -> Bool {
         logger.log("Updating departures, current locationString: \(self.locationString)")
-        if !updating {
-            updating = true
-            let updatedData: SavedDepartures? = await updater.departures(location: loc ?? location, force: force, configuration: configuration)
-            if let updatedData {
-                stnsDeps = updatedData.stnsDeps
-                dateDeparturesUpdated = updatedData.date
-            }
-            updating = false
-            return updatedData != nil
-        } else {
+        updating = true
+        guard await !updater.updating else {
             logger.log("---Already running elsewhere")
+            updating = await updater.updating
             return true
         }
+        let location = loc ?? location
+        let updatedData: SavedDepartures? = await updater.departures(location: location, force: force, configuration: configuration)
+        if let updatedData {
+            stnsDeps = updatedData.stnsDeps
+            dateDeparturesUpdated = updatedData.date
+        }
+        updating = await updater.updating
+        return updatedData != nil
     }
     
-//    func scheduleIntervalUpdates(secInterval: Int = 180) {
-//        Task {
-//            logger.log("DispatchQueue - updating departures")
-//            await updateDepartures()
-//        }
-//        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(secInterval)) { [weak self] in
-//            self?.scheduleIntervalUpdates()
-//        }
-//    }
+    //    func scheduleIntervalUpdates(secInterval: Int = 180) {
+    //        Task {
+    //            logger.log("DispatchQueue - updating departures")
+    //            await updateDepartures()
+    //        }
+    //        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(secInterval)) { [weak self] in
+    //            self?.scheduleIntervalUpdates()
+    //        }
+    //    }
     
     static func example() -> UpdateManager {
         let updateManager = UpdateManager()
@@ -127,13 +136,13 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             do {
                 let jsonData = try Data(contentsOf: url)
                 updateManager.stnsDeps = try JSONDecoder().decode([StationDepartures].self, from: jsonData)
-                //                updateManager.lastDepUpdateFinished = Date()
             } catch {
                 updateManager.stnsDeps = []
             }
         } else {
             updateManager.stnsDeps = []
         }
+        updateManager.dateDeparturesUpdated = Date()
         return updateManager
     }
 }
@@ -148,90 +157,81 @@ struct SavedDepartures: Codable {
 
 actor Updater {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Updater")
-    var lastDepUpdateStarted: Date? = nil
-    var lastDepUpdateFinished: Date? = nil
-    var downloading: Bool = false
+    var updating = false
     
     static func reqUrl(location: CLLocation, configuration: ConfigurationAppIntent? = nil) -> URL {
-        //        TODO: Use stop types preferences
-        var stopTypesString: String = "NaptanMetroStation,NaptanRailStation"
-        
-        if let cfg = configuration {
-            var stopTypes: [String] = []
-            if cfg.metroStations {
-                stopTypes.append("NaptanMetroStation")
-            }
-            if cfg.railStations {
-                stopTypes.append("NaptanRailStation")
-            }
-            if cfg.busStations {
-                stopTypes.append("NaptanPublicBusCoachTram")
-            }
-            stopTypesString = stopTypes.joined(separator: ",")
-        }
-        
+        //        TODO: Use stop types preferences for main app
         let baseUrl = "https://departures-backend.azurewebsites.net/api/nearest"
-//        let baseUrl = "http://127.0.0.1:5000/nearest"
-        let urlString = "\(baseUrl)?lat=\(location.coordinate.latitude)&lng=\(location.coordinate.longitude)&stopTypes=\(stopTypesString)"
+        //        let baseUrl = "http://127.0.0.1:5000/nearest"
+        guard let cfg = configuration else {
+            let urlString = "\(baseUrl)?lat=\(location.coordinate.latitude)&lng=\(location.coordinate.longitude)&stopTypes=NaptanMetroStation,NaptanRailStation"
+            return URL(string: urlString)!
+        }
+        var stopTypes: [String] = []
+        if cfg.metroStations { stopTypes.append("NaptanMetroStation") }
+        if cfg.railStations { stopTypes.append("NaptanRailStation") }
+        if cfg.busStations { stopTypes.append("NaptanPublicBusCoachTram") }
+        let urlString = "\(baseUrl)?lat=\(location.coordinate.latitude)&lng=\(location.coordinate.longitude)&stopTypes=\(stopTypes.joined(separator: ","))"
         return URL(string: urlString)!
     }
     
     func cache(_ downloaded: SavedDepartures) {
         let encoded = try! JSONEncoder().encode(downloaded)
         UserDefaults(suiteName: "group.com.vinayh.Departures")!.set(encoded, forKey: "stnsDeps")
-        print("Caching fresh departures from:", downloaded.date.formatted(date: .omitted, time: .shortened))
+        logger.log("Caching fresh departures from: \(downloaded.date.formatted(date: .omitted, time: .shortened))")
     }
     
     func fromCache() -> SavedDepartures? {
         let expiry_sec = 30.0
         let encoded = UserDefaults(suiteName: "group.com.vinayh.Departures")!.object(forKey: "stnsDeps") as? Data
-        if let encoded = encoded {
-            if let saved = try? JSONDecoder().decode(SavedDepartures.self, from: encoded) {
-                if Date().timeIntervalSince1970 - saved.time < expiry_sec {
-                    print("Retrieved departures from:", saved.date.formatted(date: .omitted, time: .shortened))
-                    return saved
-                } else {
-                    print("Removing expired departures from:", saved.date.formatted(date: .omitted, time: .shortened))
-                    UserDefaults(suiteName: "group.com.vinayh.Departures")!.removeObject(forKey: "stnsDeps")
-                }
-            } else {
-                print("Cannot decode SavedDepartures")
-            }
-        } else {
-            print("Nothing saved in UserDefaults")
+        guard let encoded = encoded else {
+            logger.log("Nothing saved in UserDefaults")
+            return nil
         }
-        return nil
+        guard let saved = try? JSONDecoder().decode(SavedDepartures.self, from: encoded) else {
+            logger.error("Cannot decode SavedDepartures")
+            return nil
+        }
+        if Date().timeIntervalSince1970 - saved.time < expiry_sec {
+            logger.log("Retrieved departures from: \(saved.date.formatted(date: .omitted, time: .shortened))")
+            return saved
+        } else {
+            logger.log("Removing expired departures from: \(saved.date.formatted(date: .omitted, time: .shortened))")
+            UserDefaults(suiteName: "group.com.vinayh.Departures")!.removeObject(forKey: "stnsDeps")
+            return nil
+        }
     }
     
     func departures(location: CLLocation?, force: Bool, configuration: ConfigurationAppIntent?) async -> SavedDepartures? {
+        updating = true
         if !force, let cached = fromCache() {
+            updating = false
             return cached
-        } else {
-            guard let location = location else {
-                print("Location not set")
-                return nil
-            }
-            let url = Updater.reqUrl(location: location, configuration: configuration)
-            downloading = true
-            let task = Task {
-                let (data, _) = try await URLSession.shared.data(from: url) // Fetch JSON
-                return try JSONDecoder().decode(Response.self, from: data) // Parse JSON
-            }
-            do {
-                let response = try await task.value
-                downloading = false
-                let downloaded = SavedDepartures(stnsDeps: response.stnsDeps,
-                                            time: Date().timeIntervalSince1970,
-                                            lat: Float(location.coordinate.latitude),
-                                            lng: Float(location.coordinate.longitude))
-                cache(downloaded)
-                return downloaded
-            } catch {
-                downloading = false
-                logger.error("Error fetching departures, req URL: \(url.absoluteString), error: \(error)")
-                lastDepUpdateStarted = nil
-                return nil
-            }
+        }
+        guard let location = location else {
+            logger.error("Location not set")
+            updating = false
+            return nil
+        }
+        logger.log("Fetching departures")
+        let url = Updater.reqUrl(location: location, configuration: configuration)
+        let task = Task {
+            let (data, _) = try await URLSession.shared.data(from: url) // Fetch JSON
+            return try JSONDecoder().decode(Response.self, from: data) // Parse JSON
+        }
+        do {
+            let response = try await task.value
+            let downloaded = SavedDepartures(stnsDeps: response.stnsDeps,
+                                             time: Date().timeIntervalSince1970,
+                                             lat: Float(location.coordinate.latitude),
+                                             lng: Float(location.coordinate.longitude))
+            cache(downloaded)
+            updating = false
+            return downloaded
+        } catch {
+            logger.error("Error fetching departures, req URL: \(url.absoluteString), error: \(error)")
+            updating = false
+            return nil
         }
     }
 }

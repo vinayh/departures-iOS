@@ -24,6 +24,7 @@ struct Departure: Codable, Identifiable, Equatable, Hashable {
     
     var lineFormatted: String {
         let special = ["hammersmith-city": "H&C",
+                       "london-overground": "Overground",
                        "dlr": "DLR"]
         return special[line] ?? line.capitalized
     }

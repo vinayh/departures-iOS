@@ -12,8 +12,6 @@ struct DeparturesApp: App {
     @StateObject var updateManager = UpdateManager()
     
     var body: some Scene {
-        updateManager.locationManager.startUpdatingLocation()
-
         return WindowGroup {
             DeparturesView()
                 .environmentObject(updateManager)
