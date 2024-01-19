@@ -22,14 +22,13 @@ struct DeparturesView: View {
         } label: {
             Image(systemName: "gear.circle")
                 .font(.system(size: 24))
-                .padding(5)
-                .background(Color(.white))
+                .padding(7)
+                .background(Color(UIColor.systemBackground).opacity(0.7))
                 .clipShape(Circle())
                 .shadow(radius: 3)
-                .opacity(0.9)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding([.leading, .top], 10)
+        .padding(EdgeInsets(top: 5, leading: 5, bottom: 0, trailing: 0))
     }
     
     var body: some View {
