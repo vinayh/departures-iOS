@@ -11,7 +11,7 @@ import MapKit
 struct DeparturesMapView: View {
     @EnvironmentObject var updateManager: UpdateManager
     @State var position: MapCameraPosition = .userLocation(followsHeading: true, fallback: .automatic)
-    
+
     var body: some View {
         Map(position: $position) {
             UserAnnotation()

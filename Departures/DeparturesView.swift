@@ -13,21 +13,49 @@ extension PresentationDetent {
 }
 
 struct DeparturesView: View {
-    @State private var showingList = true
     @State private var settingsDetent = PresentationDetent.small
+    @State private var showingSettings = false
+    
+    var settingsButtonView: some View {
+        Button {
+            showingSettings.toggle()
+        } label: {
+            Image(systemName: "gear.circle")
+                .font(.system(size: 24))
+                .padding(5)
+                .background(Color(.white))
+                .clipShape(Circle())
+                .shadow(radius: 3)
+                .opacity(0.9)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding([.leading, .top], 10)
+    }
     
     var body: some View {
-        DeparturesMapView()
-            .sheet(isPresented: $showingList) {
-                DeparturesListView()
-                    .presentationDetents(
-                        [.bar, .small, .medium, .large],
-                        selection: $settingsDetent
-                    )
-                    .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-                    .interactiveDismissDisabled()
+        let showingList = Binding<Bool>(
+            get: { !showingSettings },
+            set: { showingSettings = !$0 }
+        )
+        
+        NavigationStack {
+            ZStack {
+                DeparturesMapView()
+                    .sheet(isPresented: showingList) {
+                        DeparturesListView()
+                            .presentationDetents(
+                                [.bar, .small, .medium, .large],
+                                selection: $settingsDetent
+                            )
+                            .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+                            .interactiveDismissDisabled()
+                    }
+                settingsButtonView
             }
-            .buttonStyle(.bordered)
+            .navigationDestination(isPresented: $showingSettings) {
+                SettingsView()
+            }
+        }
     }
 }
 

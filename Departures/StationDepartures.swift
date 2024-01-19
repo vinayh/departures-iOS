@@ -7,6 +7,20 @@
 
 import SwiftUI
 
+enum StopType: String, CaseIterable {
+    case metro = "NaptanMetroStation"
+    case rail = "NaptanRailStation"
+    case bus = "NaptanPublicBusCoachTram"
+}
+
+enum ModeType: String, CaseIterable {
+    case tube = "tube"
+    case dlr = "dlr"
+    case overground = "overground"
+    case elizabethLine = "elizabeth-line"
+    case bus = "bus"
+    case tram = "tram"
+}
 
 struct Departure: Codable, Identifiable, Equatable, Hashable {
     let id: String

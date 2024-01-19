@@ -16,14 +16,14 @@ class WidgetUpdateManager: UpdateManager {
     override func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         location = locations.last
         reverseGeocode(loc: location)
-        logger.log("locationManager - Widget updating departures")
+//        logger.log("locationManager - Widget updating departures")
         Task {
             let success: Bool = await updateDepartures(loc: location)
-            print(success ? "locationManager - Widget successfully updated" : "locationManager - Widget update error")
+//            print(success ? "locationManager - Widget successfully updated" : "locationManager - Widget update error")
             if !hasUpdatedOnce && success {
                 hasUpdatedOnce = true
                 WidgetCenter.shared.reloadTimelines(ofKind: "DeparturesWidget")
-                //                print("Reloading widget timelines")
+//                print("Reloading widget timelines")
             }
         }
     }
@@ -42,7 +42,19 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var locationString: String = "Unknown"
     @Published var stnsDeps: [StationDepartures] = [StationDepartures]()
     @Published var dateDeparturesUpdated: Date? = nil
+    var updatedMinAgo: Int? {
+        if let dateDeparturesUpdated {
+            Int((Date().timeIntervalSince1970 - dateDeparturesUpdated.timeIntervalSince1970)/60)
+        } else { nil }
+    }
+    @Published var dateDepartureUpdateAttempted: Date? = nil
+    var updateAttemptedMinAgo: Int? {
+        if let dateDepartureUpdateAttempted {
+            Int((Date().timeIntervalSince1970 - dateDepartureUpdateAttempted.timeIntervalSince1970)/60)
+        } else { nil }
+    }
     
+
     override init() {
         super.init()
         locationManager.delegate = self
@@ -100,7 +112,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             }
         })
     }
-    
+
     @MainActor
     func updateDepartures(force: Bool = false, configuration: ConfigurationAppIntent? = nil, loc: CLLocation? = nil) async -> Bool {
         logger.log("Updating departures, current locationString: \(self.locationString)")
@@ -110,6 +122,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             updating = await updater.updating
             return true
         }
+        dateDepartureUpdateAttempted = Date()
         let location = loc ?? location
         let updatedData: SavedDepartures? = await updater.departures(location: location, force: force, configuration: configuration)
         if let updatedData {
@@ -119,16 +132,6 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         updating = await updater.updating
         return updatedData != nil
     }
-    
-    //    func scheduleIntervalUpdates(secInterval: Int = 180) {
-    //        Task {
-    //            logger.log("DispatchQueue - updating departures")
-    //            await updateDepartures()
-    //        }
-    //        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(secInterval)) { [weak self] in
-    //            self?.scheduleIntervalUpdates()
-    //        }
-    //    }
     
     static func example() -> UpdateManager {
         let updateManager = UpdateManager()
@@ -158,21 +161,49 @@ struct SavedDepartures: Codable {
 actor Updater {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Updater")
     var updating = false
+    let defaultSettings = ["type.NaptanMetroStation": true,
+                           "type.NaptanRailStation": true,
+                           "type.NaptanPublicBusCoachTram": false,
+                           "mode.tube": true,
+                           "mode.dlr": true,
+                           "mode.overground": true,
+                           "mode.elizabeth-line": true,
+                           "mode.bus": false,
+                           "mode.tram": false
+    ]
+    
+    init() {
+        UserDefaults.standard.register(defaults: defaultSettings)
+    }
     
     static func reqUrl(location: CLLocation, configuration: ConfigurationAppIntent? = nil) -> URL {
         //        TODO: Use stop types preferences for main app
         let baseUrl = "https://departures-backend.azurewebsites.net/api/nearest"
         //        let baseUrl = "http://127.0.0.1:5000/nearest"
-        guard let cfg = configuration else {
-            let urlString = "\(baseUrl)?lat=\(location.coordinate.latitude)&lng=\(location.coordinate.longitude)&stopTypes=NaptanMetroStation,NaptanRailStation"
+        if let cfg = configuration {
+            var stopTypes: [String] = []
+            if cfg.metroStations { stopTypes.append("NaptanMetroStation") }
+            if cfg.railStations { stopTypes.append("NaptanRailStation") }
+            if cfg.busStations { stopTypes.append("NaptanPublicBusCoachTram") }
+            let urlString = "\(baseUrl)?lat=\(location.coordinate.latitude)&lng=\(location.coordinate.longitude)&stopTypes=\(stopTypes.joined(separator: ","))"
             return URL(string: urlString)!
         }
-        var stopTypes: [String] = []
-        if cfg.metroStations { stopTypes.append("NaptanMetroStation") }
-        if cfg.railStations { stopTypes.append("NaptanRailStation") }
-        if cfg.busStations { stopTypes.append("NaptanPublicBusCoachTram") }
-        let urlString = "\(baseUrl)?lat=\(location.coordinate.latitude)&lng=\(location.coordinate.longitude)&stopTypes=\(stopTypes.joined(separator: ","))"
-        return URL(string: urlString)!
+        else {
+            var modeTypes: [String] = []
+            var stopTypes: [String] = []
+            for m in ModeType.allCases {
+                if UserDefaults().object(forKey: "mode.\(m.rawValue)") as! Bool {
+                    modeTypes.append(m.rawValue)
+                }
+            }
+            for s in StopType.allCases {
+                if UserDefaults().object(forKey: "type.\(s.rawValue)") as! Bool {
+                    stopTypes.append(s.rawValue)
+                }
+            }
+            let urlString = "\(baseUrl)?lat=\(location.coordinate.latitude)&lng=\(location.coordinate.longitude)&stopTypes=\(stopTypes.joined(separator: ","))&modes=\(modeTypes.joined(separator: ","))"
+            return URL(string: urlString)!
+        }
     }
     
     func cache(_ downloaded: SavedDepartures) {
