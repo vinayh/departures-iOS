@@ -7,9 +7,10 @@
 
 import SwiftUI
 
-struct StationRow: View {
+struct StationRowView: View {
     @Environment(\.self) var environment
     let stnDeps: StationDepartures
+    let context: TimelineViewDefaultContext
     
     var body: some View {
         VStack {
@@ -50,5 +51,7 @@ struct StationRow: View {
 }
 
 #Preview {
-    StationRow(stnDeps: UpdateManager.example().stnsDeps[1])
+    TimelineView(.periodic(from: Date(), by: 60.0)) { context in
+        StationRowView(stnDeps: UpdateManager.example().stnsDeps[1], context: context)
+    }
 }

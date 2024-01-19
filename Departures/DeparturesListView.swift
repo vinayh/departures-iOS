@@ -54,7 +54,7 @@ struct DeparturesListView: View {
             if updateManager.stnsDeps.count > 0 {
                 List {
                     ForEach(updateManager.stnsDeps) { stnDeps in
-                        StationRow(stnDeps: stnDeps)
+                        StationRowView(stnDeps: stnDeps, context: context)
                     }
                 }
                 .transition(.slide)

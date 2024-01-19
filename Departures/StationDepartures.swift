@@ -48,6 +48,11 @@ struct Departure: Codable, Identifiable, Equatable, Hashable {
         return Int((arrivalDate.timeIntervalSinceNow / 60).rounded(.down))
     }
     
+    func arrivingMinAfter(_ date: Date) -> Int {
+        let arrivalDate = ISO8601DateFormatter().date(from: arrival_time)!
+        return Int((arrivalDate.timeIntervalSince(date) / 60).rounded(.down))
+    }
+    
     var backgroundColor: Color { Color(line) }
     
     func foregroundColor(_ environment: EnvironmentValues) -> Color {
@@ -55,7 +60,7 @@ struct Departure: Codable, Identifiable, Equatable, Hashable {
         let luminance = 0.2126 * resolved.red + 0.7152 * resolved.green + 0.0722 * resolved.green
         return luminance < 0.6 ? .white : .black
     }
-
+    
     // TODO: Check if this Equatable impl prevents UI data from updating if destination/line remain the same and only arrival_time changes
     // Now added arrival_time comparison to StationDepartures equality function to hopefully prevent this possible issue
     static func == (lhs: Departure, rhs: Departure) -> Bool {

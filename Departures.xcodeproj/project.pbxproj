@@ -28,7 +28,7 @@
 		A18E550B2B48857300FC7285 /* DeparturesWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A18E54F92B48857200FC7285 /* DeparturesWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A18E55152B48890300FC7285 /* AppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18E55042B48857200FC7285 /* AppIntent.swift */; };
 		A18E55162B48890400FC7285 /* AppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18E55042B48857200FC7285 /* AppIntent.swift */; };
-		A192C1892B51819D00793A62 /* StationRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A192C1882B51819D00793A62 /* StationRow.swift */; };
+		A192C1892B51819D00793A62 /* StationRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A192C1882B51819D00793A62 /* StationRowView.swift */; };
 		A1C957412B4C4B8100D73E34 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A18E54CF2B48840100FC7285 /* Assets.xcassets */; };
 		A1D52B9A2B506E4300C4A48A /* UpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D52B992B506E4300C4A48A /* UpdateManager.swift */; };
 		A1F939BD2B56C30F00B651EB /* UpdateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1D52B992B506E4300C4A48A /* UpdateManager.swift */; };
@@ -98,7 +98,7 @@
 		A18E55062B48857300FC7285 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A18E55082B48857300FC7285 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A18E55142B48880600FC7285 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		A192C1882B51819D00793A62 /* StationRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationRow.swift; sourceTree = "<group>"; };
+		A192C1882B51819D00793A62 /* StationRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StationRowView.swift; sourceTree = "<group>"; };
 		A1D52B992B506E4300C4A48A /* UpdateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateManager.swift; sourceTree = "<group>"; };
 		A1F939BB2B56C0C000B651EB /* Departures.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Departures.entitlements; sourceTree = "<group>"; };
 		A1F939BC2B56C0EF00B651EB /* DeparturesWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DeparturesWidgetExtension.entitlements; sourceTree = "<group>"; };
@@ -171,7 +171,7 @@
 				A11791582B505964008414B7 /* sampleDepartures.json */,
 				A17721BB2B52F92400DC3EB8 /* DeparturesMapView.swift */,
 				A17721B92B52F82E00DC3EB8 /* DeparturesListView.swift */,
-				A192C1882B51819D00793A62 /* StationRow.swift */,
+				A192C1882B51819D00793A62 /* StationRowView.swift */,
 				A11791542B505804008414B7 /* DeparturesView.swift */,
 				A1D52B992B506E4300C4A48A /* UpdateManager.swift */,
 				A117915B2B505D5C008414B7 /* StationDepartures.swift */,
@@ -398,7 +398,7 @@
 				A1D52B9A2B506E4300C4A48A /* UpdateManager.swift in Sources */,
 				A11791552B505804008414B7 /* DeparturesView.swift in Sources */,
 				A18E54CC2B48840000FC7285 /* DeparturesApp.swift in Sources */,
-				A192C1892B51819D00793A62 /* StationRow.swift in Sources */,
+				A192C1892B51819D00793A62 /* StationRowView.swift in Sources */,
 				A18E55152B48890300FC7285 /* AppIntent.swift in Sources */,
 				A117915C2B505D5C008414B7 /* StationDepartures.swift in Sources */,
 			);
