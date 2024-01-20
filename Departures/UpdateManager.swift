@@ -60,20 +60,33 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.delegate = self
         locationManager.requestWhenInUseAuthorization()
         locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-        locationManager.distanceFilter = 500
+        locationManager.distanceFilter = 300
         locationManager.startUpdatingLocation()
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        var forcedUpdateLargeLocChange = false
+        if let prevLoc = location, let newLoc = locations.last, prevLoc.distance(from: newLoc) > 200 {
+            forcedUpdateLargeLocChange = true
+        }
         location = locations.last
         reverseGeocode(loc: location)
-        logger.log("locationManager - updating departures")
         if !locManagerUpdating {
             locManagerUpdating = true
-            locUpdateTask = Task {
-                let success = await updateDepartures(loc: location)
-                locManagerUpdating = false
-                return success
+            if forcedUpdateLargeLocChange {
+                logger.log("locationManager - force updating departures due to large location change")
+                locUpdateTask = Task {
+                    let success = await updateDepartures(force: true, loc: location)
+                    locManagerUpdating = false
+                    return success
+                }
+            } else {
+                logger.log("locationManager - optionally updating departures due to small location change")
+                locUpdateTask = Task {
+                    let success = await updateDepartures(force: false, loc: location)
+                    locManagerUpdating = false
+                    return success
+                }
             }
         }
     }
