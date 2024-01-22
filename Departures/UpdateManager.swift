@@ -16,45 +16,42 @@ class WidgetUpdateManager: UpdateManager {
     override func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         location = locations.last
         reverseGeocode(loc: location)
-//        logger.log("locationManager - Widget updating departures")
+        //        logger.log("locationManager - Widget updating departures")
         Task {
             let success: Bool = await updateDepartures(loc: location)
-//            print(success ? "locationManager - Widget successfully updated" : "locationManager - Widget update error")
+            //            print(success ? "locationManager - Widget successfully updated" : "locationManager - Widget update error")
             if !hasUpdatedOnce && success {
                 hasUpdatedOnce = true
                 WidgetCenter.shared.reloadTimelines(ofKind: "DeparturesWidget")
-//                print("Reloading widget timelines")
+                //                print("Reloading widget timelines")
             }
         }
     }
 }
 
 class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "UpdateManager")
     let locationManager = CLLocationManager()
     private let geocoder = CLGeocoder()
-    private let updater = Updater()
     private var locUpdateTask: Task<Bool, Error>? = nil
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "UpdateManager")
-    private var locManagerUpdating = false
+    lazy private var updater = Updater(stnsDeps: stnsDeps, dateDeparturesUpdated: dateDeparturesUpdated)
     
     @Published var updating = false
     @Published var location: CLLocation? = nil
     @Published var locationString: String = "Unknown"
     @Published var stnsDeps: [StationDepartures] = [StationDepartures]()
     @Published var dateDeparturesUpdated: Date? = nil
-    var updatedMinAgo: Int? {
-        if let dateDeparturesUpdated {
-            Int((Date().timeIntervalSince1970 - dateDeparturesUpdated.timeIntervalSince1970)/60)
-        } else { nil }
-    }
     @Published var dateDepartureUpdateAttempted: Date? = nil
-    var updateAttemptedMinAgo: Int? {
-        if let dateDepartureUpdateAttempted {
-            Int((Date().timeIntervalSince1970 - dateDepartureUpdateAttempted.timeIntervalSince1970)/60)
+    
+    
+    func dateMinAgo(_ date: Date?) -> Int? {
+        if let date {
+            Int((Date().timeIntervalSince1970 - date.timeIntervalSince1970)/60)
         } else { nil }
     }
+    var updatedMinAgo: Int? { dateMinAgo(dateDeparturesUpdated) }
+    var updateAttemptedMinAgo: Int? { dateMinAgo(dateDepartureUpdateAttempted) }
     
-
     override init() {
         super.init()
         locationManager.delegate = self
@@ -65,30 +62,20 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        var forcedUpdateLargeLocChange = false
+        func updateTask(_ force: Bool) {
+            Task {
+                logger.log("locationManager - updating departures, force: \(force)")
+                return await updateDepartures(force: force, loc: location)
+            }
+        }
+        var forceUpdate = location == nil
         if let prevLoc = location, let newLoc = locations.last, prevLoc.distance(from: newLoc) > 200 {
-            forcedUpdateLargeLocChange = true
+            logger.log("locationManager - location change \(prevLoc.distance(from: newLoc) > 200)")
+            forceUpdate = true
         }
         location = locations.last
         reverseGeocode(loc: location)
-        if !locManagerUpdating {
-            locManagerUpdating = true
-            if forcedUpdateLargeLocChange {
-                logger.log("locationManager - force updating departures due to large location change")
-                locUpdateTask = Task {
-                    let success = await updateDepartures(force: true, loc: location)
-                    locManagerUpdating = false
-                    return success
-                }
-            } else {
-                logger.log("locationManager - optionally updating departures due to small location change")
-                locUpdateTask = Task {
-                    let success = await updateDepartures(force: false, loc: location)
-                    locManagerUpdating = false
-                    return success
-                }
-            }
-        }
+        updateTask(forceUpdate)
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -125,25 +112,25 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             }
         })
     }
-
+    
     @MainActor
     func updateDepartures(force: Bool = false, configuration: ConfigurationAppIntent? = nil, loc: CLLocation? = nil) async -> Bool {
-        logger.log("Updating departures, current locationString: \(self.locationString)")
         updating = true
-        guard await !updater.updating else {
-            logger.log("---Already running elsewhere")
-            updating = await updater.updating
-            return true
-        }
+        logger.log("updateDepartures - force: \(force), locationString: \(self.locationString)")
         dateDepartureUpdateAttempted = Date()
-        let location = loc ?? location
-        let updatedData: SavedDepartures? = await updater.departures(location: location, force: force, configuration: configuration)
-        if let updatedData {
+        do {
+            let updatedData = try await updater.updated(location: loc ?? location,
+                                                           force: force,
+                                                           configuration: configuration)
             stnsDeps = updatedData.stnsDeps
             dateDeparturesUpdated = updatedData.date
+            updating = await updater.existingTask != nil
+            return true
+        } catch {
+            logger.error("updateDepartures - Error fetching departures: \(error)")
+            updating = await updater.existingTask != nil
+            return false
         }
-        updating = await updater.updating
-        return updatedData != nil
     }
     
     static func example() -> UpdateManager {
@@ -173,7 +160,8 @@ struct SavedDepartures: Codable {
 
 actor Updater {
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "Updater")
-    var updating = false
+    var existingTask: Task<SavedDepartures, Error>?
+    
     let defaultSettings = ["type.NaptanMetroStation": true,
                            "type.NaptanRailStation": true,
                            "type.NaptanPublicBusCoachTram": false,
@@ -185,7 +173,12 @@ actor Updater {
                            "mode.tram": false
     ]
     
-    init() {
+    enum UpdaterError: LocalizedError {
+        case locationError
+        case fetchError
+    }
+    
+    init(stnsDeps: [StationDepartures], dateDeparturesUpdated: Date?) {
         UserDefaults.standard.register(defaults: defaultSettings)
     }
     
@@ -246,16 +239,13 @@ actor Updater {
         }
     }
     
-    func departures(location: CLLocation?, force: Bool, configuration: ConfigurationAppIntent?) async -> SavedDepartures? {
-        updating = true
+    func fetchDepartures(location: CLLocation?, force: Bool, configuration: ConfigurationAppIntent?) async throws -> SavedDepartures {
         if !force, let cached = fromCache() {
-            updating = false
             return cached
         }
         guard let location = location else {
             logger.error("Location not set")
-            updating = false
-            return nil
+            throw UpdaterError.locationError
         }
         logger.log("Fetching departures")
         let url = Updater.reqUrl(location: location, configuration: configuration)
@@ -270,12 +260,22 @@ actor Updater {
                                              lat: Float(location.coordinate.latitude),
                                              lng: Float(location.coordinate.longitude))
             cache(downloaded)
-            updating = false
             return downloaded
         } catch {
             logger.error("Error fetching departures, req URL: \(url.absoluteString), error: \(error)")
-            updating = false
-            return nil
+            throw UpdaterError.fetchError
         }
+    }
+    
+    func updated(location: CLLocation?, force: Bool, configuration: ConfigurationAppIntent?) async throws -> SavedDepartures {
+        if let existingTask {
+            return try await existingTask.value
+        }
+        let task = Task<SavedDepartures, Error> {
+            existingTask = nil
+            return try await fetchDepartures(location: location, force: force, configuration: configuration)
+        }
+        existingTask = task
+        return try await task.value
     }
 }
