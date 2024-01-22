@@ -19,7 +19,25 @@ struct ConfigurationAppIntent: WidgetConfigurationIntent {
     var railStations: Bool
     
     @Parameter(title: "Bus and Tram", default: false)
-    var busStations: Bool
+    var busStops: Bool
+    
+    @Parameter(title: "Underground", default: true)
+    var modeTube: Bool
+    
+    @Parameter(title: "DLR", default: true)
+    var modeDlr: Bool
+    
+    @Parameter(title: "Overground", default: true)
+    var modeOverground: Bool
+    
+    @Parameter(title: "Elizabeth line", default: true)
+    var modeElizabeth: Bool
+    
+    @Parameter(title: "Bus", default: false)
+    var modeBus: Bool
+    
+    @Parameter(title: "Tram", default: false)
+    var modeTram: Bool
 }
 
 #if DEBUG
@@ -28,7 +46,13 @@ extension ConfigurationAppIntent {
         let intent = ConfigurationAppIntent()
         intent.metroStations = true
         intent.railStations = true
-        intent.busStations = false
+        intent.busStops = false
+        intent.modeTube = true
+        intent.modeDlr = true
+        intent.modeOverground = true
+        intent.modeElizabeth = true
+        intent.modeBus = false
+        intent.modeTram = false
         return intent
     }
 }

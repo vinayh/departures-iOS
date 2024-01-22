@@ -78,7 +78,7 @@ struct DeparturesWidgetEntryView : View {
     var body: some View {
         let stopTypes: String = (entry.configuration.metroStations ? "🚇" : "")
         + (entry.configuration.railStations ? "🚆" : "")
-        + (entry.configuration.busStations ? "🚌" : "")
+        + (entry.configuration.busStops ? "🚌" : "")
         
         // TODO: Improve text adaptation to widget type/size, currently works passably for small and medium widgets
         VStack(spacing: 0) {
@@ -140,7 +140,7 @@ struct DeparturesTimelineProvider: AppIntentTimelineProvider {
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<DeparturesEntry> {
 //        print("timeline - Widget updating")
-        _ = await updateManager.updateDepartures(configuration: configuration)
+        _ = await updateManager.updateDepartures(configDictionary: DeparturesTimelineProvider.configDictionary(configuration))
 //        print(updatedData != nil ? "timeline - Widget successfully updated" : "timeline - Widget update error")
         let entry: DeparturesEntry = DeparturesEntry(date: updateManager.dateDeparturesUpdated ?? Date(),
                                                      configuration: configuration,
@@ -150,6 +150,20 @@ struct DeparturesTimelineProvider: AppIntentTimelineProvider {
         let nextUpdate = Calendar.current.date(byAdding: DateComponents(minute: 5), to: Date())!
         let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
         return timeline
+    }
+    
+    static func configDictionary(_ cfg: ConfigurationAppIntent) -> Dictionary<String, Bool> {
+        var cfgDict: [String: Bool] = [:]
+        cfgDict["mode.NaptanMetroStation"] = cfg.metroStations
+        cfgDict["mode.NaptanRailStation"] = cfg.railStations
+        cfgDict["mode.NaptanPublicBusCoachTram"] = cfg.busStops
+        cfgDict["type.tube"] = cfg.modeTube
+        cfgDict["type.dlr"] = cfg.modeDlr
+        cfgDict["type.overground"] = cfg.modeOverground
+        cfgDict["type.elizabeth-line"] = cfg.modeElizabeth
+        cfgDict["type.bus"] = cfg.modeBus
+        cfgDict["type.tram"] = cfg.modeTram
+        return cfgDict
     }
 }
 

@@ -15,7 +15,7 @@ extension PresentationDetent {
 struct DeparturesView: View {
     @State private var settingsDetent = PresentationDetent.small
     @State private var showingSettings = false
-    
+
     var settingsButtonView: some View {
         Button {
             showingSettings.toggle()

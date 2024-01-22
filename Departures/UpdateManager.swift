@@ -7,24 +7,21 @@
 
 import os
 import SwiftUI
-import WidgetKit
 import CoreLocation
 
 class WidgetUpdateManager: UpdateManager {
-    var hasUpdatedOnce = false
+//    var hasUpdatedOnce = false
     
     override func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         location = locations.last
         reverseGeocode(loc: location)
-        //        logger.log("locationManager - Widget updating departures")
         Task {
-            let success: Bool = await updateDepartures(loc: location)
-            //            print(success ? "locationManager - Widget successfully updated" : "locationManager - Widget update error")
-            if !hasUpdatedOnce && success {
-                hasUpdatedOnce = true
-                WidgetCenter.shared.reloadTimelines(ofKind: "DeparturesWidget")
-                //                print("Reloading widget timelines")
-            }
+            let _: Bool = await updateDepartures(loc: location)
+//            if !hasUpdatedOnce, success {
+//                hasUpdatedOnce = true
+//                WidgetCenter.shared.reloadTimelines(ofKind: "DeparturesWidget")
+//                print("Reloading widget timelines")
+//            }
         }
     }
 }
@@ -43,14 +40,39 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var dateDeparturesUpdated: Date? = nil
     @Published var dateDepartureUpdateAttempted: Date? = nil
     
+    var updatedMinAgo: Int? { dateMinAgo(dateDeparturesUpdated) }
+    var updateAttemptedMinAgo: Int? { dateMinAgo(dateDepartureUpdateAttempted) }
     
     func dateMinAgo(_ date: Date?) -> Int? {
         if let date {
             Int((Date().timeIntervalSince1970 - date.timeIntervalSince1970)/60)
         } else { nil }
     }
-    var updatedMinAgo: Int? { dateMinAgo(dateDeparturesUpdated) }
-    var updateAttemptedMinAgo: Int? { dateMinAgo(dateDepartureUpdateAttempted) }
+    
+    enum Status {
+        case initial
+        case loaded(updatedMinAgo: Int, attemptedMinAgo: Int)
+        case noResults(updatedMinAgo: Int, attemptedMinAgo: Int)
+        case initFetching(attemptedMinAgo: Int)
+        case loadedFetching(attemptedMinAgo: Int, updatedMinAgo: Int)
+        case noResultsFetching(attemptedMinAgo: Int, updatedMinAgo: Int)
+        case error
+    }
+    
+    var status: Status {
+        if updating, dateDepartureUpdateAttempted != nil {
+            if dateDeparturesUpdated != nil {
+                if stnsDeps.count > 0 { return Status.loadedFetching(attemptedMinAgo: updateAttemptedMinAgo!, updatedMinAgo: updatedMinAgo!) }
+                else { return Status.noResultsFetching(attemptedMinAgo: updateAttemptedMinAgo!, updatedMinAgo: updatedMinAgo!) }
+            } else { return Status.initFetching(attemptedMinAgo: updateAttemptedMinAgo!) }
+        } else if !updating {
+            if dateDeparturesUpdated != nil {
+                if stnsDeps.count > 0 { return Status.loaded(updatedMinAgo: updatedMinAgo!, attemptedMinAgo: updateAttemptedMinAgo!) }
+                else { return Status.noResults(updatedMinAgo: updatedMinAgo!, attemptedMinAgo: updateAttemptedMinAgo!) }
+            } else if dateDepartureUpdateAttempted == nil { return Status.initial }
+        }
+        return Status.error
+    }
     
     override init() {
         super.init()
@@ -114,14 +136,14 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     @MainActor
-    func updateDepartures(force: Bool = false, configuration: ConfigurationAppIntent? = nil, loc: CLLocation? = nil) async -> Bool {
+    func updateDepartures(force: Bool = false, configDictionary: Dictionary<String, Bool>? = nil, loc: CLLocation? = nil) async -> Bool {
         updating = true
         logger.log("updateDepartures - force: \(force), locationString: \(self.locationString)")
         dateDepartureUpdateAttempted = Date()
         do {
             let updatedData = try await updater.updated(location: loc ?? location,
-                                                           force: force,
-                                                           configuration: configuration)
+                                                        force: force,
+                                                        configDictionary: configDictionary)
             stnsDeps = updatedData.stnsDeps
             dateDeparturesUpdated = updatedData.date
             updating = await updater.existingTask != nil
@@ -182,34 +204,26 @@ actor Updater {
         UserDefaults.standard.register(defaults: defaultSettings)
     }
     
-    static func reqUrl(location: CLLocation, configuration: ConfigurationAppIntent? = nil) -> URL {
-        //        TODO: Use stop types preferences for main app
+    static func reqUrl(location: CLLocation, configDictionary: Dictionary<String, Bool>? = nil) -> URL {
         let baseUrl = "https://departures-backend.azurewebsites.net/api/nearest"
-        //        let baseUrl = "http://127.0.0.1:5000/nearest"
-        if let cfg = configuration {
-            var stopTypes: [String] = []
-            if cfg.metroStations { stopTypes.append("NaptanMetroStation") }
-            if cfg.railStations { stopTypes.append("NaptanRailStation") }
-            if cfg.busStations { stopTypes.append("NaptanPublicBusCoachTram") }
-            let urlString = "\(baseUrl)?lat=\(location.coordinate.latitude)&lng=\(location.coordinate.longitude)&stopTypes=\(stopTypes.joined(separator: ","))"
-            return URL(string: urlString)!
+        func getKey(_ key: String) -> Bool {
+            if let configDictionary { return configDictionary[key]! }
+            else { return UserDefaults().object(forKey: key) as! Bool }
         }
-        else {
-            var modeTypes: [String] = []
-            var stopTypes: [String] = []
-            for m in ModeType.allCases {
-                if UserDefaults().object(forKey: "mode.\(m.rawValue)") as! Bool {
-                    modeTypes.append(m.rawValue)
-                }
+        var modeTypes: [String] = []
+        var stopTypes: [String] = []
+        for m in ModeType.allCases {
+            if getKey("mode.\(m.rawValue)") {
+                modeTypes.append(m.rawValue)
             }
-            for s in StopType.allCases {
-                if UserDefaults().object(forKey: "type.\(s.rawValue)") as! Bool {
-                    stopTypes.append(s.rawValue)
-                }
-            }
-            let urlString = "\(baseUrl)?lat=\(location.coordinate.latitude)&lng=\(location.coordinate.longitude)&stopTypes=\(stopTypes.joined(separator: ","))&modes=\(modeTypes.joined(separator: ","))"
-            return URL(string: urlString)!
         }
+        for s in StopType.allCases {
+            if getKey("type.\(s.rawValue)") {
+                stopTypes.append(s.rawValue)
+            }
+        }
+        let urlString = "\(baseUrl)?lat=\(location.coordinate.latitude)&lng=\(location.coordinate.longitude)&stopTypes=\(stopTypes.joined(separator: ","))&modes=\(modeTypes.joined(separator: ","))"
+        return URL(string: urlString)!
     }
     
     func cache(_ downloaded: SavedDepartures) {
@@ -239,7 +253,7 @@ actor Updater {
         }
     }
     
-    func fetchDepartures(location: CLLocation?, force: Bool, configuration: ConfigurationAppIntent?) async throws -> SavedDepartures {
+    func fetchDepartures(location: CLLocation?, force: Bool, configDictionary: Dictionary<String, Bool>?) async throws -> SavedDepartures {
         if !force, let cached = fromCache() {
             return cached
         }
@@ -248,7 +262,7 @@ actor Updater {
             throw UpdaterError.locationError
         }
         logger.log("Fetching departures")
-        let url = Updater.reqUrl(location: location, configuration: configuration)
+        let url = Updater.reqUrl(location: location, configDictionary: configDictionary)
         let task = Task {
             let (data, _) = try await URLSession.shared.data(from: url) // Fetch JSON
             return try JSONDecoder().decode(Response.self, from: data) // Parse JSON
@@ -267,13 +281,13 @@ actor Updater {
         }
     }
     
-    func updated(location: CLLocation?, force: Bool, configuration: ConfigurationAppIntent?) async throws -> SavedDepartures {
+    func updated(location: CLLocation?, force: Bool, configDictionary: Dictionary<String, Bool>?) async throws -> SavedDepartures {
         if let existingTask {
             return try await existingTask.value
         }
         let task = Task<SavedDepartures, Error> {
             existingTask = nil
-            return try await fetchDepartures(location: location, force: force, configuration: configuration)
+            return try await fetchDepartures(location: location, force: force, configDictionary: configDictionary)
         }
         existingTask = task
         return try await task.value
