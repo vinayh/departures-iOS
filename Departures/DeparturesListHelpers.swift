@@ -8,9 +8,11 @@
 import SwiftUI
 
 func locationTextView(_ updateManager: UpdateManager) -> some View {
-    ViewThatFits(in: .horizontal) {
-        let locIconName = updateManager.location == nil ? "location.slash.fill" : "location.fill"
-        Text("\(Image(systemName: locIconName)) \(updateManager.locationString)")
-        Image(systemName: locIconName)
-    }
+//    ViewThatFits(in: .horizontal) {
+//        let locIconName = updateManager.location == nil ? "location.slash.fill" : "location.fill"
+//        Text("\(Image(systemName: locIconName)) \(updateManager.locationString)")
+//        Image(systemName: locIconName)
+//    }
+    let locIconName = updateManager.location == nil ? "location.slash.fill" : "location.fill"
+    return Text("\(Image(systemName: locIconName)) \(updateManager.locationString)")
 }

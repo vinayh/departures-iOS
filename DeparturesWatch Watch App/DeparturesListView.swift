@@ -17,13 +17,10 @@ struct DeparturesListView: View {
             showingSettings.toggle()
         } label: {
             Image(systemName: "gear.circle")
-                .font(.system(size: 24))
-                .padding(7)
+                .font(.system(size: 16))
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        //        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        //        .padding(EdgeInsets(top: 5, leading: 5, bottom: 0, trailing: 0))
     }
     
     var updateButtonView: some View {
@@ -79,19 +76,24 @@ struct DeparturesListView: View {
         NavigationStack {
             TimelineView(.periodic(from: updateManager.dateDeparturesUpdated ?? Date(), by: 60.0)) { context in
                 HStack {
-                    locationTextView(updateManager)
                     updateButtonView
                     updateTextView
+                        .frame(alignment: .leading)
+                    locationTextView(updateManager)
+                        .frame(maxWidth: .infinity)
                     settingsButtonView
+                        .frame(alignment: .trailing)
                 }
-                .frame(maxWidth: .infinity, maxHeight: 20)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity)
                 .font(.footnote)
+                .padding(0)
                 
                 switch updateManager.status {
                 case .loaded, .loadedFetching:
                     listView(context)
                 case .initFetching, .noResultsFetching:
-                    Text("Loading nearby departures...")
+                    Text("Loading departures...")
                         .font(.headline)
                         .frame(maxHeight: .infinity)
                 case .noResults:

@@ -11,38 +11,61 @@ struct StationRowView: View {
     @Environment(\.self) var environment
     let stnDeps: StationDepartures
     let context: TimelineViewDefaultContext
+    @ScaledMetric(relativeTo: .title2) var imageHeight = 22.0
+    
+    var stationImage: some View {
+        if stnDeps.station.stop_type == "NaptanMetroStation" {
+            return AnyView(Image("tfl_logo")
+                .resizable()
+                .aspectRatio(contentMode: .fit))
+        } else if stnDeps.station.stop_type == "NaptanRailStation" {
+            return AnyView(Image("national_rail_logo")
+                .resizable()
+                .aspectRatio(contentMode: .fit))
+        } else {
+            return AnyView(EmptyView())
+        }
+    }
     
     var body: some View {
-        VStack {
+        HStack {
+            stationImage
+                .frame(height: imageHeight)
+            
             Text(stnDeps.station.nameShort)
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .font(.title2)
                 .bold()
-            Grid(verticalSpacing: 2.0) {
-                let mergedDepartures = stnDeps.mergedDepartures
-                ForEach(mergedDepartures.indices, id: \.self) { idx in
-                    let firstDep: Departure = mergedDepartures[idx].first!
-                    let times: String = mergedDepartures[idx].map { dep in "\(dep.arrivingInMin)'" }
-                                            .joined(separator: ", ")
-                    GridRow {
-                        HStack {
-                            Text(firstDep.destinationShort)
-                            Text(firstDep.lineFormatted)
-                                .font(.caption2)
-                                .bold()
-                                .padding([.top, .bottom], 2.0)
-                                .padding([.trailing, .leading], 4.0)
-                                .background(firstDep.backgroundColor)
-                                .foregroundStyle(firstDep.foregroundColor(environment))
-                                .cornerRadius(3.0)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Text(times)
-                            .frame(maxWidth: 120, alignment: .trailing)
-                    }
-                    .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Text("\(Image(systemName: "figure.walk")) \(Int(stnDeps.station.distance))m")
+                .opacity(0.5)
+                .font(.footnote)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }.listRowSeparator(.hidden)
+        
+        Grid(verticalSpacing: 2.0) {
+            let mergedDepartures = stnDeps.mergedDepartures
+            ForEach(mergedDepartures.indices, id: \.self) { idx in
+                let firstDep: Departure = mergedDepartures[idx].first!
+                let times: String = mergedDepartures[idx].map { dep in "\(dep.arrivingInMin)'" }
+                    .joined(separator: ", ")
+                GridRow {
+                    HStack {
+                        Text(firstDep.destinationShort)
+                        Text(firstDep.lineFormatted)
+                            .font(.caption2)
+                            .bold()
+                            .padding([.top, .bottom], 2.0)
+                            .padding([.trailing, .leading], 4.0)
+                            .background(firstDep.backgroundColor)
+                            .foregroundStyle(firstDep.foregroundColor(environment))
+                            .cornerRadius(3.0)
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text(times)
+                        .frame(maxWidth: 100, alignment: .leading)
                 }
+                .lineLimit(1)
             }
         }
         .listRowBackground(Color.clear)

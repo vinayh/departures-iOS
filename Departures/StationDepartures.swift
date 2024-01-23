@@ -83,6 +83,8 @@ struct Station: Codable, Identifiable, Equatable {
     let lat: Float
     let lon: Float
     let name: String
+    let stop_type: String
+    let distance: Float
     
     var nameShort: String {
         return name
