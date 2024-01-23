@@ -11,26 +11,14 @@ struct StationRowView: View {
     @Environment(\.self) var environment
     let stnDeps: StationDepartures
     let context: TimelineViewDefaultContext
-    @ScaledMetric(relativeTo: .title2) var imageHeight = 22.0
+    @ScaledMetric(relativeTo: .title2) var imageWidth = 18.0
     
-    var stationImage: some View {
-        if stnDeps.station.stop_type == "NaptanMetroStation" {
-            return AnyView(Image("tfl_logo")
-                .resizable()
-                .aspectRatio(contentMode: .fit))
-        } else if stnDeps.station.stop_type == "NaptanRailStation" {
-            return AnyView(Image("national_rail_logo")
-                .resizable()
-                .aspectRatio(contentMode: .fit))
-        } else {
-            return AnyView(EmptyView())
-        }
-    }
+    
     
     var body: some View {
         HStack {
-            stationImage
-                .frame(height: imageHeight)
+            stationImageView(stnDeps)
+                .frame(width: imageWidth)
             
             Text(stnDeps.station.nameShort)
                 .font(.title2)

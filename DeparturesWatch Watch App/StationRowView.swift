@@ -11,13 +11,25 @@ struct StationRowView: View {
     @Environment(\.self) var environment
     let stnDeps: StationDepartures
     let context: TimelineViewDefaultContext
+    @ScaledMetric(relativeTo: .headline) var imageWidth = 16.0
     
     var body: some View {
         VStack {
-            Text(stnDeps.station.nameShort)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .font(.headline)
-                .bold()
+            HStack {
+                stationImageView(stnDeps)
+                    .frame(width: imageWidth)
+                
+                Text(stnDeps.station.nameShort)
+                    .font(.headline)
+                    .bold()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text("\(Image(systemName: "figure.walk")) \(Int(stnDeps.station.distance))m")
+                    .opacity(0.5)
+                    .font(.footnote)
+                    .frame(alignment: .trailing)
+            }.frame(maxWidth: .infinity)
+            
             Grid(verticalSpacing: 2.0) {
                 let mergedDepartures = stnDeps.mergedDepartures
                 ForEach(mergedDepartures.indices, id: \.self) { idx in

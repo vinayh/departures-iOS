@@ -12,18 +12,18 @@ import CoreLocation
 class WidgetUpdateManager: UpdateManager {
 //    var hasUpdatedOnce = false
     
-    override func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        location = locations.last
-        reverseGeocode(loc: location)
-        Task {
-            let _: Bool = await updateDepartures(loc: location)
+//    override func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+//        location = locations.last
+//        reverseGeocode(loc: location)
+//        Task {
+//            let _: Bool = await updateDepartures(loc: location)
 //            if !hasUpdatedOnce, success {
 //                hasUpdatedOnce = true
 //                WidgetCenter.shared.reloadTimelines(ofKind: "DeparturesWidget")
 //                print("Reloading widget timelines")
 //            }
-        }
-    }
+//        }
+//    }
 }
 
 class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
@@ -32,6 +32,7 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let geocoder = CLGeocoder()
     private var locUpdateTask: Task<Bool, Error>? = nil
     lazy private var updater = Updater(stnsDeps: stnsDeps, dateDeparturesUpdated: dateDeparturesUpdated)
+    private let geoloc_expiry_dist_m = 25.0
     
     @Published var updating = false
     @Published var location: CLLocation? = nil
@@ -84,20 +85,14 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        func updateTask(_ force: Bool) {
-            Task {
-                logger.log("locationManager - updating departures, force: \(force)")
-                return await updateDepartures(force: force, loc: location)
-            }
-        }
-        var forceUpdate = location == nil
-        if let prevLoc = location, let newLoc = locations.last, prevLoc.distance(from: newLoc) > 200 {
-            logger.log("locationManager - location change \(prevLoc.distance(from: newLoc) > 200)")
-            forceUpdate = true
+        if let newLoc = locations.last, (location == nil || newLoc.distance(from: location!) > geoloc_expiry_dist_m) {
+            reverseGeocode(loc: newLoc)
         }
         location = locations.last
-        reverseGeocode(loc: location)
-        updateTask(forceUpdate)
+        Task {
+            logger.log("locationManager - updating departures")
+            return await updateDepartures(force: false, loc: location)
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -129,9 +124,12 @@ class UpdateManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         }
         locationString = String(format: "[%.2f, %.2f]", loc.coordinate.latitude, loc.coordinate.longitude)
         geocoder.reverseGeocodeLocation(loc, completionHandler: {(placemarks, error) -> Void in
-            if let postalCode = placemarks?.first?.postalCode {
-                self.locationString = postalCode
+            self.logger.log("Ran reverse geocode on \(self.locationString)")
+            guard let postalCode = placemarks?.first?.postalCode else {
+                self.logger.error("Reverse geocode error, locationString: \(self.locationString), error: \(error?.localizedDescription ?? "nil")")
+                return
             }
+            self.locationString = postalCode
         })
     }
     
@@ -194,6 +192,8 @@ actor Updater {
                            "mode.bus": false,
                            "mode.tram": false
     ]
+    let cache_expiry_sec = 30.0
+    let cache_expiry_dist_m = 100.0
     
     enum UpdaterError: LocalizedError {
         case locationError
@@ -232,8 +232,7 @@ actor Updater {
         logger.log("Caching fresh departures from: \(downloaded.date.formatted(date: .omitted, time: .shortened))")
     }
     
-    func fromCache() -> SavedDepartures? {
-        let expiry_sec = 30.0
+    func fromCache(location: CLLocation?) -> SavedDepartures? {
         let encoded = UserDefaults(suiteName: "group.com.vinayh.Departures")!.object(forKey: "stnsDeps") as? Data
         guard let encoded = encoded else {
             logger.log("Nothing saved in UserDefaults")
@@ -243,18 +242,20 @@ actor Updater {
             logger.error("Cannot decode SavedDepartures")
             return nil
         }
-        if Date().timeIntervalSince1970 - saved.time < expiry_sec {
-            logger.log("Retrieved departures from: \(saved.date.formatted(date: .omitted, time: .shortened))")
-            return saved
-        } else {
-            logger.log("Removing expired departures from: \(saved.date.formatted(date: .omitted, time: .shortened))")
-            UserDefaults(suiteName: "group.com.vinayh.Departures")!.removeObject(forKey: "stnsDeps")
-            return nil
+        if Date().timeIntervalSince1970 - saved.time < cache_expiry_sec {
+            let prevLoc = CLLocation(latitude: CLLocationDegrees(saved.lat), longitude: CLLocationDegrees(saved.lng))
+            if let newLoc = location, newLoc.distance(from: prevLoc) < cache_expiry_dist_m {
+                logger.log("Retrieved cached departures, small loc change, time: \(saved.date.formatted(date: .omitted, time: .shortened))")
+                return saved
+            }
         }
+        logger.log("Removing expired departures from: \(saved.date.formatted(date: .omitted, time: .shortened))")
+        UserDefaults(suiteName: "group.com.vinayh.Departures")!.removeObject(forKey: "stnsDeps")
+        return nil
     }
     
     func fetchDepartures(location: CLLocation?, force: Bool, configDictionary: Dictionary<String, Bool>?) async throws -> SavedDepartures {
-        if !force, let cached = fromCache() {
+        if !force, let cached = fromCache(location: location) {
             return cached
         }
         guard let location = location else {
